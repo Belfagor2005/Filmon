@@ -1,4 +1,3 @@
-# edited from Lululla , thank's Raed
 #from albatros plugins
 from Components.Label import Label
 from Components.Sources.StaticText import StaticText
@@ -6,7 +5,7 @@ from Components.ActionMap import NumberActionMap, ActionMap
 from Components.GUIComponent import GUIComponent
 from Components.MenuList import MenuList
 from Components.Pixmap import Pixmap, MovingPixmap
-from Components.MultiContent import MultiContentEntryText #, MultiContentEntryPixmap, MultiContentEntryPixmapAlphaTest
+from Components.MultiContent import MultiContentEntryText
 from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
 from enigma import gFont, gPixmapPtr,  eTimer, eConsoleAppContainer, ePicLoad, loadPNG, getDesktop, eServiceReference, iPlayableService, eListboxPythonMultiContent, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_HALIGN_CENTER, RT_VALIGN_CENTER, eListbox
 from Plugins.Plugin import PluginDescriptor
@@ -23,19 +22,6 @@ from Components.AVSwitch import AVSwitch
 import hashlib
 from Tools.BoundFunction import boundFunction
 from socket import gaierror, error
-# #python2
-# import cookielib
-# from urllib2 import Request, URLError, urlopen
-# import urllib, urllib2
-# from urllib import quote, unquote_plus, unquote, urlencode
-# from httplib import HTTPConnection, CannotSendRequest, BadStatusLine, HTTPException
-##python3
-# import http.cookiejar
-# from urllib.request import Request, urlopen
-# from urllib.error import URLError
-# import urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse
-# from urllib.parse import quote, unquote_plus, unquote, urlencode
-# from http.client import HTTPConnection, CannotSendRequest, BadStatusLine, HTTPException
 from time import strptime, mktime
 from Components.Console import Console as iConsole
 from time import *
@@ -60,7 +46,6 @@ else:
     import urllib, urllib2
     from urllib import quote, unquote_plus, unquote, urlencode
     from httplib import HTTPConnection, CannotSendRequest, BadStatusLine, HTTPException
-    
 
 
 global isDreamOS, skin_path
@@ -269,7 +254,6 @@ class filmon(Screen):
         self['name'].setText(auswahl)
         self.load_poster()
 
-
     def get_session(self):
         url = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=rtmp'
         req = Request(url)
@@ -350,7 +334,6 @@ class filmon(Screen):
         except Exception as ex:
             print(ex)
             print('exe downloadError')
-
 
     def downloadPic(self, data, jpg_store):
         if fileExists(jpg_store):
