@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+#!/usr/bin/python
+#--------------------#
+#  coded by Lululla  #
+#   skin by MMark    #
+#     09/01/2021     #
+#--------------------#
+#Info http://t.me/tivustream
+# from __future__ import print_function
 #from albatros plugins
 from Components.Label import Label
 from Components.Sources.StaticText import StaticText
@@ -7,7 +16,10 @@ from Components.MenuList import MenuList
 from Components.Pixmap import Pixmap, MovingPixmap
 from Components.MultiContent import MultiContentEntryText
 from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
-from enigma import gFont, gPixmapPtr,  eTimer, eConsoleAppContainer, ePicLoad, loadPNG, getDesktop, eServiceReference, iPlayableService, eListboxPythonMultiContent, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_HALIGN_CENTER, RT_VALIGN_CENTER, eListbox
+from enigma import eConsoleAppContainer, eServiceReference, iPlayableService, eListboxPythonMultiContent
+from enigma import RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_HALIGN_CENTER, RT_VALIGN_CENTER
+from enigma import ePicLoad, loadPNG, getDesktop
+from enigma import gFont, gPixmapPtr,  eTimer, eListbox
 from Plugins.Plugin import PluginDescriptor
 from Screens.Screen import Screen
 from Screens.MessageBox import MessageBox
@@ -16,23 +28,29 @@ from Screens.InfoBar import MoviePlayer, InfoBar
 from twisted.web.client import downloadPage, getPage, error
 from Tools.Directories import fileExists, resolveFilename, SCOPE_PLUGINS, pathExists
 from Tools.LoadPixmap import LoadPixmap
-import re, os, time, socket
-import sha, re, shutil
 from Components.AVSwitch import AVSwitch
-import hashlib
 from Tools.BoundFunction import boundFunction
 from socket import gaierror, error
 from time import strptime, mktime
 from Components.Console import Console as iConsole
-from time import *
-from Components.ActionMap import *
+import os
+import re
 import sys
+import glob
+import time
+import socket
+import sha
+import shutil
+import hashlib
+from time import *
+from sys import version_info
 
-pythonVer = 2
-if sys.version_info.major == 3:
-    pythonVer = 3
+PY3 = sys.version_info[0] == 3
+global isDreamOS, skin_path
 
-if pythonVer == 3:
+isDreamOS = False
+
+if PY3 :
     import http.cookiejar
     from urllib.request import Request, urlopen
     from urllib.error import URLError
@@ -47,14 +65,11 @@ else:
     from urllib import quote, unquote_plus, unquote, urlencode
     from httplib import HTTPConnection, CannotSendRequest, BadStatusLine, HTTPException
 
-
-global isDreamOS, skin_path
-isDreamOS = False
 try:
-	from enigma import eMediaDatabase
-	isDreamOS = True
+    from enigma import eMediaDatabase
+    isDreamOS = True
 except:
-	isDreamOS = False
+    isDreamOS = False
 
 cj = {}
 
@@ -120,7 +135,7 @@ def show_(name, link, img, session, description):
       link,
       img,
       session,
-	  description)]
+      description)]
     res.append(MultiContentEntryText(pos=(0, 0), size=(800, 40), font=8, text=name, flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER))
     return res
 
@@ -203,14 +218,11 @@ class filmon(Screen):
         global sessionx
         sessionx = self.get_session()
         url= data
-        print('read: ',  url)
         n1 = url.find('<ul class="group-channels"', 0)
         n2 = url.find('<div id="footer">', n1)
         url = url[n1:n2]
-        print("In rrrrrrrrrrrrrrrrrrrrrrrrrrrr =", url)
         regexvideo = '<li class="group-item".*?a href="(.*?)".*?logo" src="(.*?)".*?title="(.*?)"'
         match = re.compile(regexvideo,re.DOTALL).findall(url)
-        print("getGroup match =", match)
         for url, img, name in match:
             img = img.replace('\\', '')
             url = "http://www.filmon.com" + url
@@ -228,20 +240,16 @@ class filmon(Screen):
         self.index = 'cat'
         self.cat_list = []
         url=url
-        print('read url: ',  url)
         req = Request(url)
         req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')
-        req.add_header('Referer', 'https://www.filmon.com/')#XMLHttpRequest
-        req.add_header('X-Requested-With', 'XMLHttpRequest')#
+        req.add_header('Referer', 'https://www.filmon.com/')
+        req.add_header('X-Requested-With', 'XMLHttpRequest')
         page = urlopen(req)
         r = page.read()
-        print('r page-dread: ', r)
         n1 = r.find('channels"', 0)
         n2 = r.find('channels_count"', n1)
         r2 = r[n1:n2]
-        print("In rrrrrrrrrrrrrrrrrrrrrrrrrrrr2 =", r2)
         channels = re.findall('"id":(.*?),"logo":".*?","big_logo":"(.*?)","title":"(.*?)",.*?description":"(.*?)"', r2)
-        print("getChannel match =", channels)
         for id, img,title, description in channels:
             img = img.replace('\\', '')
             url = url
