@@ -73,9 +73,11 @@ except:
 
 cj = {}
 
+currversion = '1.4'
 PLUGIN_PATH  = os.path.dirname(sys.modules[__name__].__file__)
 skin_path= PLUGIN_PATH +'/skin'
-
+title_plug = '..:: Filmon V. %s ::..' % currversion
+desc_plugin = ('..:: Filmon by Lululla %s ::.. ' % currversion)
 
 HD = getDesktop(0).size()
 if HD.width() > 1280:
@@ -165,7 +167,7 @@ class filmon(Screen):
          'red': self.exit}, -1)
         self['menulist'] = m2list([])
         self['red'] = Label(_('Exit'))
-        self['title'] = Label('filmon.com')
+        self['title'] = Label(title_plug)
         self['name'] = Label('')
         self['text'] = Label('')
         self['poster'] = Pixmap()
@@ -439,7 +441,8 @@ class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifica
 def main(session, **kwargs):
     session.open(filmon)
 
+
 def Plugins(path, **kwargs):
     global plugin_path
     plugin_path = path
-    return [PluginDescriptor(name='Filmon', description='from Albatros plugin', where=[PluginDescriptor.WHERE_EXTENSIONSMENU], fnc=main), PluginDescriptor(name='Filmon', description='from Albatros plugin', where=[PluginDescriptor.WHERE_PLUGINMENU], fnc=main, icon='plugin.png')]
+    return [PluginDescriptor(name=title_plug, description=desc_plugin, where=[PluginDescriptor.WHERE_EXTENSIONSMENU], fnc=main), PluginDescriptor(name=title_plug, description=desc_plugin, where=[PluginDescriptor.WHERE_PLUGINMENU], fnc=main, icon='plugin.png')]
