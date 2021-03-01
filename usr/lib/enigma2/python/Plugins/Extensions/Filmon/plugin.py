@@ -76,8 +76,8 @@ cj = {}
 currversion = '1.4'
 PLUGIN_PATH  = os.path.dirname(sys.modules[__name__].__file__)
 skin_path= PLUGIN_PATH +'/skin'
-title_plug = '..:: Filmon V. %s ::..' % currversion
-desc_plugin = ('..:: Filmon by Lululla %s ::.. ' % currversion)
+title_plug = '..:: Filmon Player ::..'
+desc_plugin = '..:: Live Filmon by Lululla %s ::.. ' % currversion
 
 HD = getDesktop(0).size()
 if HD.width() > 1280:
