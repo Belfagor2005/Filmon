@@ -42,7 +42,7 @@ import sys
 import glob
 import time
 import socket
-import sha
+import hashlib
 import six
 import shutil
 import hashlib
