@@ -3,11 +3,10 @@
 #--------------------#
 #  coded by Lululla  #
 #   skin by MMark    #
-#     09/01/2021     #
+#     09/05/2021     #
 #--------------------#
 #Info http://t.me/tivustream
 # from __future__ import print_function
-#from albatros plugins
 from Components.Label import Label
 from Components.Sources.StaticText import StaticText
 from Components.ActionMap import NumberActionMap, ActionMap
@@ -75,6 +74,7 @@ try:
 except:
     isDreamOS = False
 
+           
 cj = {}
 
 currversion = '1.4'
@@ -111,6 +111,32 @@ else:
     MediaPlayerInstalled = False
 
 
+        # req = Request(url)
+        # req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')
+        # req.add_header('Referer', 'https://www.filmon.com/')
+        # req.add_header('X-Requested-With', 'XMLHttpRequest')
+        # page = urlopen(req)
+        # r = page.read()
+def getUrl(url):
+    try:
+        req = Request(url)
+        req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; rv:52.0) Gecko/20100101 Firefox/52.0')
+        req.add_header('Referer', 'https://www.filmon.com/')
+        req.add_header('X-Requested-With', 'XMLHttpRequest')
+        response = urlopen(req)
+        link = response.read()
+        response.close()
+        print("link =", link)
+        return link
+    except:
+        e = URLError
+        print('We failed to open "%s".' % url)
+        if hasattr(e, 'code'):
+            print('We failed with error code - %s.' % e.code)
+        if hasattr(e, 'reason'):
+            print('We failed to reach a server.')
+            print('Reason: ', e.reason)
+            
 global tmp_image
 tmp_image='/tmp/filmon/poster.png'
 if not pathExists('/tmp/filmon/'):
@@ -223,7 +249,8 @@ class filmon(Screen):
         self.cat_list = []
         global sessionx
         sessionx = self.get_session()
-        url= data
+        # url= six.ensure_str(data)
+        url= data        
         n1 = url.find('<ul class="group-channels"', 0)
         n2 = url.find('<div id="footer">', n1)
         url = url[n1:n2]
@@ -245,13 +272,15 @@ class filmon(Screen):
     def cat(self,url):
         self.index = 'cat'
         self.cat_list = []
-        url=url
-        req = Request(url)
-        req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')
-        req.add_header('Referer', 'https://www.filmon.com/')
-        req.add_header('X-Requested-With', 'XMLHttpRequest')
-        page = urlopen(req)
-        r = page.read()
+
+        # r=getUrl(url)
+        # print('rrrrrrrr ', r)
+        # if isDreamOS:
+            # r  = six.ensure_str(r)
+            
+        content = getUrl(url)
+        r = six.ensure_str(content)
+        
         n1 = r.find('channels"', 0)
         n2 = r.find('channels_count"', n1)
         r2 = r[n1:n2]
@@ -391,56 +420,7 @@ class filmon(Screen):
                     print('no cover.. error')
             return
 
-# class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifications, InfoBarShowHide):
-    # def __init__(self, session, name, url):
-        # Screen.__init__(self, session)
-        # self.skinName = 'MoviePlayer'
-        # title = 'Play'
-        # self['list'] = MenuList([])
-        # InfoBarMenu.__init__(self)
-        # InfoBarNotifications.__init__(self)
-        # InfoBarBase.__init__(self)
-        # InfoBarShowHide.__init__(self)
-        # self['actions'] = ActionMap(['WizardActions',
-         # 'MoviePlayerActions',
-         # 'EPGSelectActions',
-         # 'MediaPlayerSeekActions',
-         # 'ColorActions',
-         # 'InfobarShowHideActions',
-         # 'InfobarActions'], {'leavePlayer': self.cancel,
-         # 'back': self.cancel}, -1)
-        # self.allowPiP = False
-        # InfoBarSeek.__init__(self, actionmap='MediaPlayerSeekActions')
-        # url = url.replace(':', '%3a')
-        # self.url = url
-        # self.name = name
-        # self.srefOld = self.session.nav.getCurrentlyPlayingServiceReference()
-        # self.onLayoutFinish.append(self.openTest)
 
-    # def openTest(self):
-        # url = self.url
-        # pass
-        # ref = '4097:0:1:0:0:0:0:0:0:0:' + url
-        # sref = eServiceReference(ref)
-        # sref.setName(self.name)
-        # self.session.nav.stopService()
-        # self.session.nav.playService(sref)
-
-    # def cancel(self):
-        # if os.path.exists('/tmp/hls.avi'):
-            # os.remove('/tmp/hls.avi')
-        # self.session.nav.stopService()
-        # self.session.nav.playService(self.srefOld)
-        # self.close()
-
-    # def keyLeft(self):
-        # self['text'].left()
-
-    # def keyRight(self):
-        # self['text'].right()
-
-    # def keyNumberGlobal(self, number):
-        # self['text'].number(number)
 
 class TvInfoBarShowHide():
     """ InfoBar show/hide control, accepts toggleShow and hide actions, might start
@@ -680,7 +660,7 @@ class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifica
         print('servicetype1: ', self.servicetype)
         url = str(self.url)
         currentindex = 0
-        streamtypelist = ["1", "4097"]
+        streamtypelist = ["4097"]
         if os.path.exists("/usr/bin/gstplayer"):
             streamtypelist.append("5001")
         if os.path.exists("/usr/bin/exteplayer3"):
