@@ -3,81 +3,91 @@
 #--------------------#
 #  coded by Lululla  #
 #   skin by MMark    #
-#     09/05/2021     #
+#     09/06/2021     #
 #--------------------#
 #Info http://t.me/tivustream
-# from __future__ import print_function
-from Components.Label import Label
-from Components.Sources.StaticText import StaticText
+from __future__ import print_function#, unicode_literals
+from Components.AVSwitch import AVSwitch
 from Components.ActionMap import NumberActionMap, ActionMap
+from Components.Console import Console as iConsole
 from Components.GUIComponent import GUIComponent
+from Components.Label import Label
 from Components.MenuList import MenuList
-from Components.Pixmap import Pixmap, MovingPixmap
 from Components.MultiContent import MultiContentEntryText
+from Components.Pixmap import Pixmap, MovingPixmap
+from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
+from Components.Sources.StaticText import StaticText
 from Components.config import *
+from Plugins.Plugin import PluginDescriptor
 from Screens.InfoBar import MoviePlayer, InfoBar
 from Screens.InfoBarGenerics import InfoBarAudioSelection, InfoBarNotifications 
 from Screens.InfoBarGenerics import InfoBarShowHide, InfoBarMenu, InfoBarSeek 
-from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
-from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
-from enigma import eConsoleAppContainer, eServiceReference, iPlayableService, eListboxPythonMultiContent
-from enigma import RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_HALIGN_CENTER, RT_VALIGN_CENTER
-from enigma import ePicLoad, loadPNG, getDesktop
-from enigma import gFont, gPixmapPtr,  eTimer, eListbox
-from Plugins.Plugin import PluginDescriptor
-from Screens.Screen import Screen
 from Screens.MessageBox import MessageBox
-from twisted.web.client import downloadPage, getPage, error
+from Screens.Screen import Screen
+from Tools.BoundFunction import boundFunction
 from Tools.Directories import fileExists, resolveFilename, SCOPE_PLUGINS, pathExists
 from Tools.LoadPixmap import LoadPixmap
-from Components.AVSwitch import AVSwitch
-from Tools.BoundFunction import boundFunction
+from enigma import RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_HALIGN_CENTER, RT_VALIGN_CENTER
+from enigma import eConsoleAppContainer, eServiceReference, iPlayableService, eListboxPythonMultiContent
+from enigma import ePicLoad, loadPNG, getDesktop
+from enigma import gFont, gPixmapPtr,  eTimer, eListbox
+from os.path import splitext
 from socket import gaierror, error
+from sys import version_info
+from time import *
 from time import strptime, mktime
-from Components.Console import Console as iConsole
+from twisted.web.client import downloadPage, getPage, error
+import glob
+import hashlib
 import os
 import re
-import sys
-import glob
-import time
-import socket
-import hashlib
-import six
 import shutil
-import hashlib
-from time import *
-from sys import version_info
+import six
+import socket
+import sys
+import time
 
-PY3 = sys.version_info[0] == 3
 global isDreamOS, skin_path
-
 isDreamOS = False
 
-if PY3 :
+PY3 = sys.version_info.major >= 3
+print('Py3: ',PY3)
+
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.request import Request
+from six.moves.urllib.error import HTTPError, URLError
+from six.moves.urllib.request import urlretrieve    
+from six.moves.urllib.parse import urlparse
+from six.moves.urllib.parse import parse_qs
+from six.moves.urllib.request import build_opener
+from six.moves.urllib.parse import quote_plus
+from six.moves.urllib.parse import unquote_plus
+from six.moves.urllib.parse import quote
+from six.moves.urllib.parse import unquote
+from six.moves.urllib.parse import urlencode
+
+import six.moves.urllib.request
+import six.moves.urllib.parse
+import six.moves.urllib.error
+
+try:
     import http.cookiejar
-    from urllib.request import Request, urlopen
-    from urllib.error import URLError
-    import urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse
-    from urllib.parse import quote, unquote_plus, unquote, urlencode
-    from http.client import HTTPConnection, CannotSendRequest, BadStatusLine, HTTPException
+    from html.entities import name2codepoint as n2cp
+    from http.client import HTTPConnection, CannotSendRequest, BadStatusLine, HTTPException    
 
-else:
+except:
     import cookielib
-    from urllib2 import Request, URLError, urlopen
-    import urllib, urllib2
-    from urllib import quote, unquote_plus, unquote, urlencode
+    from htmlentitydefs import name2codepoint as n2cp
     from httplib import HTTPConnection, CannotSendRequest, BadStatusLine, HTTPException
-
+    
 try:
     from enigma import eMediaDatabase
     isDreamOS = True
 except:
     isDreamOS = False
 
-           
+currversion = '1.5'           
 cj = {}
-
-currversion = '1.4'
 PLUGIN_PATH  = os.path.dirname(sys.modules[__name__].__file__)
 skin_path= PLUGIN_PATH +'/skin'
 title_plug = '..:: Filmon Player ::..'
@@ -96,7 +106,33 @@ else:
         skin_path = skin_path + '/skin_cvs/defaultListScreen.xml'
     else:
         skin_path = skin_path + '/skin_pli/defaultListScreen.xml'
+try:
+    from OpenSSL import SSL
+    from twisted.internet import ssl
+    from twisted.internet._sslverify import ClientTLSOptions
+    sslverify = True
+except:
+    sslverify = False
 
+if sslverify:
+    class SNIFactory(ssl.ClientContextFactory):
+        def __init__(self, hostname=None):
+            self.hostname = hostname
+
+        def getContext(self):
+            ctx = self._contextFactory(self.method)
+            if self.hostname:
+                ClientTLSOptions(self.hostname, ctx)
+            return ctx
+
+def checkStr(txt):
+    if PY3:
+        if isinstance(txt, type(bytes())):
+            txt = txt.decode('utf-8')
+    else:
+        if isinstance(txt, type(six.text_type())):
+            txt = txt.encode('utf-8')
+    return txt
 
 from enigma import addFont
 try:
@@ -109,34 +145,58 @@ if fileExists('/usr/lib/enigma2/python/Plugins/Extensions/MediaPlayer/plugin.pyo
     MediaPlayerInstalled = True
 else:
     MediaPlayerInstalled = False
-
-
-        # req = Request(url)
-        # req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')
-        # req.add_header('Referer', 'https://www.filmon.com/')
-        # req.add_header('X-Requested-With', 'XMLHttpRequest')
-        # page = urlopen(req)
-        # r = page.read()
-def getUrl(url):
+def make_request(url):
     try:
+        import requests
+        link = requests.get(url, headers = {'User-Agent': 'Mozilla/5.0'}).text
+        return link
+    except ImportError:
         req = Request(url)
-        req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; rv:52.0) Gecko/20100101 Firefox/52.0')
-        req.add_header('Referer', 'https://www.filmon.com/')
-        req.add_header('X-Requested-With', 'XMLHttpRequest')
-        response = urlopen(req)
+        req.add_header('User-Agent', 'TVS')
+        response = urlopen(req, None, 3)
         link = response.read()
         response.close()
-        print("link =", link)
         return link
     except:
-        e = URLError
+        # import ssl
+        # gcontext = ssl._create_unverified_context()
+        # try:
+            # response = urlopen(req)
+        # except:       
+            # response = urlopen(req)
+        # link=response.read()
+        # response.close()
+        # return link
+    # # except:
+        e = URLError #, e:
         print('We failed to open "%s".' % url)
         if hasattr(e, 'code'):
             print('We failed with error code - %s.' % e.code)
         if hasattr(e, 'reason'):
             print('We failed to reach a server.')
             print('Reason: ', e.reason)
-            
+        return
+    return
+def getUrl(url):
+        print( "Here in getUrl url =", url)
+        req = Request(url)       
+        req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
+        try:
+            urlopen(req)
+            link=response.read()
+            response.close()
+            return link
+        except:
+            import ssl
+            gcontext = ssl._create_unverified_context()
+            try:
+                response = request.urlopen(req)
+            except:       
+                response = urlopen(req)
+            link=response.read()
+            response.close()
+            return link
+
 global tmp_image
 tmp_image='/tmp/filmon/poster.png'
 if not pathExists('/tmp/filmon/'):
@@ -147,6 +207,30 @@ else:
 os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.png' + ' /tmp/filmon/poster.png')
 os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.jpg' + ' /tmp/filmon/poster.jpg')
 
+try:
+    from OpenSSL import SSL
+    from twisted.internet import ssl
+    from twisted.internet._sslverify import ClientTLSOptions
+    sslverify = True
+except:
+    sslverify = False
+
+if sslverify:
+    try:
+        from urlparse import urlparse
+    except:
+        from urllib.parse import urlparse
+
+    class SNIFactory(ssl.ClientContextFactory):
+        def __init__(self, hostname=None):
+            self.hostname = hostname
+
+        def getContext(self):
+            ctx = self._contextFactory(self.method)
+            if self.hostname:
+                ClientTLSOptions(self.hostname, ctx)
+            return ctx
+            
 class m2list(MenuList):
 
     def __init__(self, list):
@@ -195,6 +279,7 @@ class filmon(Screen):
          'ok': self.ok,
          'cancel': self.exit,
          'red': self.exit}, -1)
+        self.menulist = []         
         self['menulist'] = m2list([])
         self['red'] = Label(_('Exit'))
         self['title'] = Label(title_plug)
@@ -205,7 +290,7 @@ class filmon(Screen):
         self.picfile = ''
         self.dnfile = 'False'
         self.currentList = 'menulist'
-        self.menulist = []
+
         self.loading_ok = False
         self.check = 'abc'
         self.count = 0
@@ -238,6 +323,8 @@ class filmon(Screen):
 
     def downxmlpage(self):
         url = 'http://www.filmon.com/group'
+        if PY3:
+            url = b'http://www.filmon.com/group'        
         getPage(url).addCallback(self._gotPageLoad).addErrback(self.errorLoad)
 
     def errorLoad(self, error):
@@ -251,16 +338,28 @@ class filmon(Screen):
         sessionx = self.get_session()
         # url= six.ensure_str(data)
         url= data        
-        n1 = url.find('<ul class="group-channels"', 0)
-        n2 = url.find('<div id="footer">', n1)
+        if PY3:
+            url = six.ensure_str(url)    
+        print("content 3 =", url)
+        try:
+            n1 = url.find('<ul class="group-channels"', 0)
+            n2 = url.find('<div id="footer">', n1)
+        except:
+            n1 = url.find(b'<ul class="group-channels"', 0)
+            n2 = url.find(b'<div id="footer">', n1)        
+        
         url = url[n1:n2]
-        regexvideo = '<li class="group-item".*?a href="(.*?)".*?logo" src="(.*?)".*?title="(.*?)"'
+        regexvideo = 'class="group-item".*?a href="(.*?)".*?logo" src="(.*?)".*?title="(.*?)"'        
+        # regexvideo = 'id="group-channels".*?a href="(.*?)".*?logo" src="(.*?)".*?title="(.*?)"'
         match = re.compile(regexvideo,re.DOTALL).findall(url)
         for url, img, name in match:
             img = img.replace('\\', '')
             url = "http://www.filmon.com" + url
             pic = ''
-            self.cat_list.append(show_(name, url, img, sessionx,pic))
+            url = checkStr(url)
+            img = checkStr(img)
+            name = checkStr(name)
+            self.cat_list.append(show_(name, url, img, sessionx, pic))
         self['menulist'].l.setList(self.cat_list)
         self['menulist'].l.setItemHeight(40)
         self['menulist'].moveToIndex(0)
@@ -269,26 +368,37 @@ class filmon(Screen):
         self['text'].setText('')
         self.load_poster()
 
+
     def cat(self,url):
         self.index = 'cat'
         self.cat_list = []
+        req = Request(url)
+        req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')
+        req.add_header('Referer', 'https://www.filmon.com/')
+        req.add_header('X-Requested-With', 'XMLHttpRequest')
+        page = urlopen(req)
+        r = page.read()
 
-        # r=getUrl(url)
-        # print('rrrrrrrr ', r)
-        # if isDreamOS:
-            # r  = six.ensure_str(r)
-            
-        content = getUrl(url)
-        r = six.ensure_str(content)
+        if PY3:
+            r = six.ensure_str(r)    
+        print("content 3 =", r)
+        try:
+            n1 = r.find('channels"', 0)
+            n2 = r.find('channels_count"', n1)
+        except:
+            n1 = r.find('channels"', 0)
+            n2 = r.find('channels_count"', n1)        
         
-        n1 = r.find('channels"', 0)
-        n2 = r.find('channels_count"', n1)
         r2 = r[n1:n2]
         channels = re.findall('"id":(.*?),"logo":".*?","big_logo":"(.*?)","title":"(.*?)",.*?description":"(.*?)"', r2)
-        for id, img,title, description in channels:
+        for id, img, title, description in channels:
             img = img.replace('\\', '')
-            url = url
-            description = description
+            
+            id = checkStr(id)
+            img = checkStr(img)
+            
+            title = checkStr(title)
+            description = checkStr(description)            
             self.cat_list.append(show_(title, id, img, sessionx, description))
         self['menulist'].l.setList(self.cat_list)
         self['menulist'].l.setItemHeight(40)
@@ -297,12 +407,14 @@ class filmon(Screen):
         self['name'].setText(auswahl)
         self.load_poster()
 
+
     def get_session(self):
         url = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=rtmp'
         req = Request(url)
         req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')
         page = urlopen(req)
         r = page.read()
+        r = six.ensure_str(r)
         session = re.findall('"session_key":"(.*?)"', r)
         if session:
             return str(session[0])
@@ -311,12 +423,22 @@ class filmon(Screen):
 
     def ok(self):
         if self.index == 'cat':
+            name = self['menulist'].getCurrent()[0][0]
             id = self['menulist'].getCurrent()[0][1]
+            print('iddddd : ', id)            
             session = self['menulist'].getCurrent()[0][3]
-            url = 'https://www.filmon.com/ajax/getChannelInfo?channel_id=%s' % str(id)
+            id = checkStr(id)
+            url = 'https://www.filmon.com/ajax/getChannelInfo?channel_id=%s' % id
             print('url: ', url)
             print('cj: ', cj)
-            getPage(url, timeout=8, method='GET', cookies=cj, headers={'Host':'www.filmon.com','X-Requested-With':'XMLHttpRequest','Referer':'https://www.filmon.com','User-Agent': 'Android'}).addCallback(self.get_rtmp)
+            if url.startswith("https") and sslverify:
+                parsed_uri = urlparse(url)
+                domain = parsed_uri.hostname
+                sniFactory = SNIFactory(domain)
+                print('uurrll: ', url)
+                getPage(six.ensure_binary(url, encoding="utf-8"), sniFactory, timeout=5, method=b'GET', cookies=cj, headers={'Host':'www.filmon.com','X-Requested-With':'XMLHttpRequest','Referer':'https://www.filmon.com','User-Agent': 'Android'}).addCallback(self.get_rtmp)
+            else:
+                getPage(six.ensure_binary(url, encoding="utf-8"), timeout=5, method=b'GET', cookies=cj, headers={'Host':'www.filmon.com','X-Requested-With':'XMLHttpRequest','Referer':'https://www.filmon.com','User-Agent': 'Android'}).addCallback(self.get_rtmp)
 
         elif self.index == 'group':
             url = self['menulist'].getCurrent()[0][1]
@@ -325,15 +447,17 @@ class filmon(Screen):
             print('session: ', session)
             self.cat(url)
 
-
     def get_rtmp(self, data):
-        print(data)
-        rtmp = re.findall('"quality":"high","url":"(.*?)"', data)
+        if PY3:
+            data = six.ensure_str(data)   
+        # data = checkStr(data)            
+        print(data)    
+        # rtmp = re.findall('"quality":"high","url":"(.*?)"', data)
+        rtmp = re.findall('"quality".*?url"\:"(.*?)"', data)        
         if rtmp:
-            first = rtmp[0].replace('\\', '')
-            fin_url = first
+            fin_url = rtmp[0].replace('\\', '')
             print('fin_url: ', fin_url)
-            self.play_that_shit(fin_url)
+            self.play_that_shit(str(fin_url))
 
     def play_that_shit(self, data):
         desc = self['menulist'].l.getCurrentSelection()[0][0]
@@ -350,77 +474,91 @@ class filmon(Screen):
 
     def load_poster(self):
         global tmp_image
-        jp_link = self['menulist'].getCurrent()[0][2]
-        tmp_image = jpg_store = '/tmp/filmon/poster.png'
-        if fileExists(tmp_image):
-            tmp_image = '/tmp/filmon/poster.png'
-        else:
-            m = hashlib.md5()
-            m.update(jp_link)
-            tmp_image = m.hexdigest()
         if self.index == 'cat':
             descriptionX = self['menulist'].getCurrent()[0][4]
             print('description: ', descriptionX)
             self['text'].setText(descriptionX)
         else:
-            self['text'].setText('')
-        test = self['menulist'].getCurrent()[0][1]
-        try:
-            downloadPage(jp_link, tmp_image).addCallback(self.downloadPic, tmp_image).addErrback(self.downloadError)
-        except Exception as ex:
-            print(ex)
-            print("Error: can't find file or read data")
-
+            self['text'].setText('')        
+        jp_link = self['menulist'].getCurrent()[0][2]
+        tmp_image = jpg_store = '/tmp/filmon/poster.png'
+        
+        if tmp_image is not None or idx != -1:
+            pixmaps = six.ensure_binary(jp_link)
+            print("debug: pixmaps:",pixmaps)
+            print("debug: pixmaps:",type(pixmaps))
+            path = urlparse(pixmaps).path
+            ext = splitext(path)[1]
+            tmp_image = b'/tmp/posterx' + ext
+            if fileExists(tmp_image):
+                tmp_image = b'/tmp/posterx' + ext
+            else:
+                m = hashlib.md5()
+                m.update(pixmaps)
+                tmp_image = m.hexdigest()
+            try:
+                if pixmaps.startswith(b"https") and sslverify:
+                    parsed_uri = urlparse(pixmaps)
+                    domain = parsed_uri.hostname
+                    sniFactory = SNIFactory(domain)
+                    if PY3 == 3:
+                        pixmaps = pixmaps.encode()
+                    print('uurrll: ', pixmaps)
+                    downloadPage(pixmaps, tmp_image, sniFactory, timeout=5).addCallback(self.downloadPic, tmp_image).addErrback(self.downloadError)
+                else:
+                    downloadPage(pixmaps, tmp_image).addCallback(self.downloadPic, tmp_image).addErrback(self.downloadError)
+            except Exception as ex:
+                print(ex)
+                print("Error: can't find file or read data")
+            return
+            
     def downloadError(self, raw):
         try:
-            os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.png' + ' /tmp/filmon/poster.png')
+            if fileExists(tmp_image):
+                self.poster_resize(tmp_image)
+            else:
+                os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.png' + ' /tmp/filmon/poster.png')
+                self.poster_resize(tmp_image)
         except Exception as ex:
             print(ex)
             print('exe downloadError')
 
-    def downloadPic(self, data, jpg_store):
-        if fileExists(jpg_store):
-            self.poster_resize(jpg_store)
+    def downloadPic(self, data, tmp_image):
+        if fileExists(tmp_image):
+            self.poster_resize(tmp_image)
         else:
             print('logo not found')
 
     def poster_resize(self, poster_path):
-        if isDreamOS:
-            self['poster'].instance.setPixmap(gPixmapPtr())
-        else:
-            self['poster'].instance.setPixmap(None)
-        self['poster'].hide()
-        sc = AVSwitch().getFramebufferScale()
-        self.picload = ePicLoad()
-        size = self['poster'].instance.size()
-        self.picload.setPara((size.width(),
-         size.height(),
-         sc[0],
-         sc[1],
-         False,
-         1,
-         '#FF000000'))
-
-        if not isDreamOS:
-            if self.picload.startDecode(poster_path, 0, 0, False) == 0:
-                ptr = self.picload.getData()
-                if ptr != None:
-                    self['poster'].instance.setPixmap(ptr)
-                    self['poster'].show()
-                else:
-                    print('no cover.. error')
+            self["poster"].show()
+            pixmaps = poster_path
+            if isDreamOS:
+                self['poster'].instance.setPixmap(gPixmapPtr())
+            else:
+                self['poster'].instance.setPixmap(None)
+            sc = AVSwitch().getFramebufferScale()
+            self.picload = ePicLoad()
+            size = self['poster'].instance.size()
+            self.picload.setPara((size.width(),
+             size.height(),
+             sc[0],
+             sc[1],
+             False,
+             1,
+             '#FF000000'))
+            ptr = self.picload.getData()
+            if isDreamOS:
+                if self.picload.startDecode(pixmaps, False) == 0:
+                    ptr = self.picload.getData()
+            else:
+                if self.picload.startDecode(pixmaps, 0, 0, False) == 0:
+                    ptr = self.picload.getData()
+            if ptr != None:
+                self['poster'].instance.setPixmap(ptr)
+                self['poster'].show()
+            else:
+                print('no cover.. error')
             return
-        else:
-            if self.picload.startDecode(poster_path,False) == 0:
-                ptr = self.picload.getData()
-                if ptr != None:
-                    self['poster'].instance.setPixmap(ptr)
-                    self['poster'].show()
-                else:
-                    print('no cover.. error')
-            return
-
-
 
 class TvInfoBarShowHide():
     """ InfoBar show/hide control, accepts toggleShow and hide actions, might start
@@ -517,6 +655,7 @@ class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifica
         InfoBarBase.__init__(self, steal_current_service=True)
         TvInfoBarShowHide.__init__(self)
         InfoBarAudioSelection.__init__(self)
+        InfoBarSeek.__init__(self)
         try:
             self.init_aspect = int(self.getAspect())
         except:
@@ -540,32 +679,16 @@ class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifica
          'stop': self.leavePlayer,
          'cancel': self.cancel,
          'back': self.cancel}, -1)
-        # self['actions'] = ActionMap(['WizardActions',
-         # 'MoviePlayerActions',
-         # 'EPGSelectActions',
-         # 'MediaPlayerSeekActions',
-         # 'ColorActions',
-         # 'InfobarShowHideActions',
-         # 'InfobarActions'], {'leavePlayer': self.cancel,
-         # 'back': self.cancel}, -1)
         self.allowPiP = False
-        InfoBarSeek.__init__(self, actionmap='InfobarSeekActions')                      
+        # InfoBarSeek.__init__(self, ActionMap='InfobarSeekActions')                      
         self.service = None
         service = None                      
-        # InfoBarSeek.__init__(self, actionmap='MediaPlayerSeekActions')
         url = url.replace(':', '%3a')
         self.url = url
         self.pcip = 'None'
         self.name = decodeHtml(name)
         self.state = self.STATE_PLAYING                                 
-        # self.hideTimer = eTimer()
-        # self.hideTimer.start(5000, True)
-        # try:
-            # self.hideTimer_conn = self.hideTimer.timeout.connect(self.ok)
-        # except:
-            # self.hideTimer.callback.append(self.ok)                                                                            
         self.srefOld = self.session.nav.getCurrentlyPlayingServiceReference()
-        # self.onLayoutFinish.append(self.openTest)
         self.onLayoutFinish.append(self.cicleStreamType)
         self.onClose.append(self.cancel)
         return
@@ -626,7 +749,6 @@ class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifica
             self.mbox = self.session.open(MessageBox, message, MessageBox.TYPE_INFO)
         except:
             pass
-
         return
         
     def showIMDB(self):
@@ -859,11 +981,13 @@ def decodeHtml(text):
 	text = text.replace('&commmat;',' ')
 	text = text.replace('&#58;',':')
 	return text	
+
 def main(session, **kwargs):
     session.open(filmon)
 
-
-def Plugins(path, **kwargs):
-    global plugin_path
-    plugin_path = path
-    return [PluginDescriptor(name=title_plug, description=desc_plugin, where=[PluginDescriptor.WHERE_EXTENSIONSMENU], fnc=main), PluginDescriptor(name=title_plug, description=desc_plugin, where=[PluginDescriptor.WHERE_PLUGINMENU], fnc=main, icon='plugin.png')]
+def Plugins(**kwargs):
+    icona = 'plugin.png'
+    extDescriptor = PluginDescriptor(name=title_plug, description=desc_plugin, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=icona, fnc=main)
+    result = [PluginDescriptor(name=title_plug, description=desc_plugin, where=[PluginDescriptor.WHERE_PLUGINMENU], icon=icona, fnc=main)]
+    result.append(extDescriptor)
+    return result
