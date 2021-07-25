@@ -145,6 +145,15 @@ if fileExists('/usr/lib/enigma2/python/Plugins/Extensions/MediaPlayer/plugin.pyo
     MediaPlayerInstalled = True
 else:
     MediaPlayerInstalled = False
+    
+def checkInternet():
+    try:
+        socket.setdefaulttimeout(0.5)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(("8.8.8.8", 53))
+        return True
+    except:
+        return False
+        
 def make_request(url):
     try:
         import requests
