@@ -47,8 +47,7 @@ import socket
 import sys
 import time
 
-global isDreamOS, skin_path
-isDreamOS = False
+global skin_path
 
 PY3 = sys.version_info.major >= 3
 print('Py3: ',PY3)
@@ -80,12 +79,6 @@ except:
     from htmlentitydefs import name2codepoint as n2cp
     from httplib import HTTPConnection, CannotSendRequest, BadStatusLine, HTTPException
     
-try:
-    from enigma import eMediaDatabase
-    isDreamOS = True
-except:
-    isDreamOS = False
-
 currversion = '1.5'           
 cj = {}
 PLUGIN_PATH  = os.path.dirname(sys.modules[__name__].__file__)
@@ -96,13 +89,13 @@ desc_plugin = '..:: Live Filmon by Lululla %s ::.. ' % currversion
 HD = getDesktop(0).size()
 if HD.width() > 1280:
     Height = 60
-    if isDreamOS:
+    if os.path.exists('/var/lib/dpkg/status'):
         skin_path = skin_path + '/skin_cvs/defaultListScreen_new.xml'
     else:
         skin_path = skin_path + '/skin_pli/defaultListScreen_new.xml'
 else:
     Height = 40
-    if isDreamOS:
+    if os.path.exists('/var/lib/dpkg/status'):
         skin_path = skin_path + '/skin_cvs/defaultListScreen.xml'
     else:
         skin_path = skin_path + '/skin_pli/defaultListScreen.xml'
@@ -140,7 +133,7 @@ try:
 except Exception as ex:
     print('addfont', ex)
 
-if fileExists('/usr/lib/enigma2/python/Plugins/Extensions/MediaPlayer/plugin.pyo'):
+if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/MediaPlayer'):
     from Plugins.Extensions.MediaPlayer import *
     MediaPlayerInstalled = True
 else:
@@ -186,6 +179,7 @@ def make_request(url):
             print('Reason: ', e.reason)
         return
     return
+
 def getUrl(url):
         print( "Here in getUrl url =", url)
         req = Request(url)       
@@ -216,30 +210,7 @@ else:
 os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.png' + ' /tmp/filmon/poster.png')
 os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.jpg' + ' /tmp/filmon/poster.jpg')
 
-try:
-    from OpenSSL import SSL
-    from twisted.internet import ssl
-    from twisted.internet._sslverify import ClientTLSOptions
-    sslverify = True
-except:
-    sslverify = False
-
-if sslverify:
-    try:
-        from urlparse import urlparse
-    except:
-        from urllib.parse import urlparse
-
-    class SNIFactory(ssl.ClientContextFactory):
-        def __init__(self, hostname=None):
-            self.hostname = hostname
-
-        def getContext(self):
-            ctx = self._contextFactory(self.method)
-            if self.hostname:
-                ClientTLSOptions(self.hostname, ctx)
-            return ctx
-            
+           
 class m2list(MenuList):
 
     def __init__(self, list):
@@ -253,7 +224,6 @@ class m2list(MenuList):
         self.l.setFont(6, gFont('Regular', 26))
         self.l.setFont(7, gFont('Regular', 28))
         self.l.setFont(8, gFont('Regular', 32))
-
 
 def show_(name, link, img, session, description):
     res = [(name,
@@ -356,7 +326,6 @@ class filmon(Screen):
         except:
             n1 = url.find(b'<ul class="group-channels"', 0)
             n2 = url.find(b'<div id="footer">', n1)        
-        
         url = url[n1:n2]
         regexvideo = 'class="group-item".*?a href="(.*?)".*?logo" src="(.*?)".*?title="(.*?)"'        
         # regexvideo = 'id="group-channels".*?a href="(.*?)".*?logo" src="(.*?)".*?title="(.*?)"'
@@ -376,7 +345,6 @@ class filmon(Screen):
         self['name'].setText(auswahl)
         self['text'].setText('')
         self.load_poster()
-
 
     def cat(self,url):
         self.index = 'cat'
@@ -415,7 +383,6 @@ class filmon(Screen):
         auswahl = self['menulist'].getCurrent()[0][0]
         self['name'].setText(auswahl)
         self.load_poster()
-
 
     def get_session(self):
         url = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=rtmp'
@@ -492,7 +459,7 @@ class filmon(Screen):
         jp_link = self['menulist'].getCurrent()[0][2]
         tmp_image = jpg_store = '/tmp/filmon/poster.png'
         
-        if tmp_image is not None or idx != -1:
+        if tmp_image != None or idx != -1:
             pixmaps = six.ensure_binary(jp_link)
             print("debug: pixmaps:",pixmaps)
             print("debug: pixmaps:",type(pixmaps))
@@ -541,7 +508,7 @@ class filmon(Screen):
     def poster_resize(self, poster_path):
             self["poster"].show()
             pixmaps = poster_path
-            if isDreamOS:
+            if os.path.exists('/var/lib/dpkg/status'):
                 self['poster'].instance.setPixmap(gPixmapPtr())
             else:
                 self['poster'].instance.setPixmap(None)
@@ -556,7 +523,7 @@ class filmon(Screen):
              1,
              '#FF000000'))
             ptr = self.picload.getData()
-            if isDreamOS:
+            if os.path.exists('/var/lib/dpkg/status'):
                 if self.picload.startDecode(pixmaps, False) == 0:
                     ptr = self.picload.getData()
             else:
@@ -742,11 +709,11 @@ class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifica
         sServiceref = ''
         try:
             servicename, serviceurl = getserviceinfo(sref)
-            if servicename is not None:
+            if servicename != None:
                 sTitle = servicename
             else:
                 sTitle = ''
-            if serviceurl is not None:
+            if serviceurl != None:
                 sServiceref = serviceurl
             else:
                 sServiceref = ''
@@ -761,12 +728,12 @@ class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifica
         return
         
     def showIMDB(self):
-        if fileExists("/usr/lib/enigma2/python/Plugins/Extensions/TMBD/plugin.pyo"):
+        if os.path.exists("/usr/lib/enigma2/python/Plugins/Extensions/TMBD"):
             from Plugins.Extensions.TMBD.plugin import TMBD
             text_clear = self.name
             text = charRemove(text_clear)
             self.session.open(TMBD, text, False)
-        elif os.path.exists("/usr/lib/enigma2/python/Plugins/Extensions/IMDb/plugin.pyo"):
+        elif os.path.exists("/usr/lib/enigma2/python/Plugins/Extensions/IMDb"):
             from Plugins.Extensions.IMDb.plugin import IMDB
             text_clear = self.name
             text = charRemove(text_clear)
@@ -828,7 +795,7 @@ class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifica
     def showVideoInfo(self):
         if self.shown:
             self.hideInfobar()
-        if self.infoCallback is not None:
+        if self.infoCallback != None:
             self.infoCallback()
         return
 
@@ -836,66 +803,100 @@ class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifica
         self.close() 
 
 def charRemove(text):
-    char = ["1080p",
-     "2018",
-     "2019",
-     "2020",
-     "2021",
-     "480p",
-     "4K",
-     "720p",
-     "ANIMAZIONE",
-     "APR",
-     "AVVENTURA",
-     "BIOGRAFICO",
-     "BDRip",
-     "BluRay",
-     "CINEMA",
-     "COMMEDIA",
-     "DOCUMENTARIO",
-     "DRAMMATICO",
-     "FANTASCIENZA",
-     "FANTASY",
-     "FEB",
-     "GEN",
-     "GIU",
-     "HDCAM",
-     "HDTC",
-     "HDTS",
-     "LD",
-     "MAFIA",
-     "MAG",
-     "MARVEL",
-     "MD",
-     "ORROR",
-     "NEW_AUDIO",
-     "POLIZ",
-     "R3",
-     "R6",
-     "SD",
-     "SENTIMENTALE",
-     "TC",
-     "TEEN",
-     "TELECINE",
-     "TELESYNC",
-     "THRILLER",
-     "Uncensored",
-     "V2",
-     "WEBDL",
-     "WEBRip",
-     "WEB",
-     "WESTERN",
-     "-",
-     "_",
-     ".",
-     "+",
-     "[",
-     "]"]
+        char = ["1080p",
+                 "2018",
+                 "2019",
+                 "2020",
+                 "2021",
+                 "2022"
+                 "PF1",
+                 "PF2",
+                 "PF3",
+                 "PF4",
+                 "PF5",
+                 "PF6",
+                 "PF7",
+                 "PF8",
+                 "PF9",
+                 "PF10",
+                 "PF11",
+                 "PF12",
+                 "PF13",
+                 "PF14",
+                 "PF15",
+                 "PF16",
+                 "PF17",
+                 "PF18",
+                 "PF19",
+                 "PF20",
+                 "PF21",
+                 "PF22",
+                 "PF23",
+                 "PF24",
+                 "PF25",
+                 "PF26",
+                 "PF27",
+                 "PF28",
+                 "PF29",
+                 "PF30"
+                 "480p",
+                 "4K",
+                 "720p",
+                 "ANIMAZIONE",
+                 # "APR",
+                 # "AVVENTURA",
+                 "BIOGRAFICO",
+                 "BDRip",
+                 "BluRay",
+                 "CINEMA",
+                 # "COMMEDIA",
+                 "DOCUMENTARIO",
+                 "DRAMMATICO",
+                 "FANTASCIENZA",
+                 "FANTASY",
+                 # "FEB",
+                 # "GEN",
+                 # "GIU",
+                 "HDCAM",
+                 "HDTC",
+                 "HDTS",
+                 "LD",
+                 "MAFIA",
+                 # "MAG",
+                 "MARVEL",
+                 "MD",
+                 # "ORROR",
+                 "NEW_AUDIO",
+                 "POLIZ",
+                 "R3",
+                 "R6",
+                 "SD",
+                 "SENTIMENTALE",
+                 "TC",
+                 "TEEN",
+                 "TELECINE",
+                 "TELESYNC",
+                 "THRILLER",
+                 "Uncensored",
+                 "V2",
+                 "WEBDL",
+                 "WEBRip",
+                 "WEB",
+                 "WESTERN",
+                 "-",
+                 "_",
+                 ".",
+                 "+",
+                 "[",
+                 "]"
+                 ]
 
-    myreplace = text
-    for ch in char:
-            myreplace = myreplace.replace(ch, "").replace("  ", " ").replace("       ", " ").strip()
-    return myreplace
+        myreplace = text.lower()
+        for ch in char:
+            ch= ch.lower()
+            # if myreplace == ch:
+            myreplace = myreplace.replace(ch, "").replace("  ", " ").replace("   ", " ").strip()
+        return myreplace
 
 
 def decodeHtml(text):
