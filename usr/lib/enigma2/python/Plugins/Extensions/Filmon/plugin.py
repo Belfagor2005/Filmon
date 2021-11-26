@@ -3,10 +3,10 @@
 #--------------------#
 #  coded by Lululla  #
 #   skin by MMark    #
-#     09/06/2021     #
+#     26/11/2021     #
 #--------------------#
 #Info http://t.me/tivustream
-from __future__ import print_function#, unicode_literals
+from __future__ import print_function
 from Components.AVSwitch import AVSwitch
 from Components.ActionMap import NumberActionMap, ActionMap
 from Components.Console import Console as iConsole
@@ -29,7 +29,7 @@ from Tools.Directories import fileExists, resolveFilename, SCOPE_PLUGINS, pathEx
 from Tools.LoadPixmap import LoadPixmap
 from enigma import RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_HALIGN_CENTER, RT_VALIGN_CENTER
 from enigma import eConsoleAppContainer, eServiceReference, iPlayableService, eListboxPythonMultiContent
-from enigma import ePicLoad, loadPNG, getDesktop
+from enigma import ePicLoad, loadPNG #, getDesktop
 from enigma import gFont, gPixmapPtr,  eTimer, eListbox
 from os.path import splitext
 from socket import gaierror, error
@@ -43,10 +43,10 @@ import os
 import re
 import shutil
 import six
-import socket
+# import socket
 import sys
 import time
-
+from Plugins.Extensions.Filmon.Utils import *
 global skin_path
 
 PY3 = sys.version_info.major >= 3
@@ -65,10 +65,6 @@ from six.moves.urllib.parse import quote
 from six.moves.urllib.parse import unquote
 from six.moves.urllib.parse import urlencode
 
-import six.moves.urllib.request
-import six.moves.urllib.parse
-import six.moves.urllib.error
-
 try:
     import http.cookiejar
     from html.entities import name2codepoint as n2cp
@@ -86,16 +82,17 @@ skin_path= PLUGIN_PATH +'/skin'
 title_plug = '..:: Filmon Player ::..'
 desc_plugin = '..:: Live Filmon by Lululla %s ::.. ' % currversion
 
-HD = getDesktop(0).size()
-if HD.width() > 1280:
+if isFHD():
     Height = 60
-    if os.path.exists('/var/lib/dpkg/status'):
+    # if os.path.exists('/var/lib/dpkg/status'):
+    if DreamOS():
         skin_path = skin_path + '/skin_cvs/defaultListScreen_new.xml'
     else:
         skin_path = skin_path + '/skin_pli/defaultListScreen_new.xml'
 else:
     Height = 40
-    if os.path.exists('/var/lib/dpkg/status'):
+    # if os.path.exists('/var/lib/dpkg/status'):
+    if DreamOS():
         skin_path = skin_path + '/skin_cvs/defaultListScreen.xml'
     else:
         skin_path = skin_path + '/skin_pli/defaultListScreen.xml'
@@ -118,15 +115,6 @@ if sslverify:
                 ClientTLSOptions(self.hostname, ctx)
             return ctx
 
-def checkStr(txt):
-    if PY3:
-        if isinstance(txt, type(bytes())):
-            txt = txt.decode('utf-8')
-    else:
-        if isinstance(txt, type(six.text_type())):
-            txt = txt.encode('utf-8')
-    return txt
-
 from enigma import addFont
 try:
     addFont('%s/1.ttf' % PLUGIN_PATH, 'RegularIPTV', 100, 1)
@@ -139,67 +127,6 @@ if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/MediaPlayer'):
 else:
     MediaPlayerInstalled = False
     
-def checkInternet():
-    try:
-        socket.setdefaulttimeout(0.5)
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(("8.8.8.8", 53))
-        return True
-    except:
-        return False
-        
-def make_request(url):
-    try:
-        import requests
-        link = requests.get(url, headers = {'User-Agent': 'Mozilla/5.0'}).text
-        return link
-    except ImportError:
-        req = Request(url)
-        req.add_header('User-Agent', 'TVS')
-        response = urlopen(req, None, 3)
-        link = response.read()
-        response.close()
-        return link
-    except:
-        # import ssl
-        # gcontext = ssl._create_unverified_context()
-        # try:
-            # response = urlopen(req)
-        # except:       
-            # response = urlopen(req)
-        # link=response.read()
-        # response.close()
-        # return link
-    # # except:
-        e = URLError #, e:
-        print('We failed to open "%s".' % url)
-        if hasattr(e, 'code'):
-            print('We failed with error code - %s.' % e.code)
-        if hasattr(e, 'reason'):
-            print('We failed to reach a server.')
-            print('Reason: ', e.reason)
-        return
-    return
-
-def getUrl(url):
-        print( "Here in getUrl url =", url)
-        req = Request(url)       
-        req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
-        try:
-            urlopen(req)
-            link=response.read()
-            response.close()
-            return link
-        except:
-            import ssl
-            gcontext = ssl._create_unverified_context()
-            try:
-                response = request.urlopen(req)
-            except:       
-                response = urlopen(req)
-            link=response.read()
-            response.close()
-            return link
-
 global tmp_image
 tmp_image='/tmp/filmon/poster.png'
 if not pathExists('/tmp/filmon/'):
@@ -212,7 +139,6 @@ os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.jpg' + ' /tmp/filmon/poster.
 
            
 class m2list(MenuList):
-
     def __init__(self, list):
         MenuList.__init__(self, list, False, eListboxPythonMultiContent)
         self.l.setFont(0, gFont('Regular', 14))
@@ -241,7 +167,6 @@ def cat_(letter, link):
     return res
 
 class filmon(Screen):
-
     def __init__(self, session):
         self.session = session
         skin = skin_path
@@ -389,8 +314,9 @@ class filmon(Screen):
         req = Request(url)
         req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')
         page = urlopen(req)
-        r = page.read()
-        r = six.ensure_str(r)
+        r = page.read().decode('utf-8')
+        if PY3:
+            r = six.ensure_str(r)
         session = re.findall('"session_key":"(.*?)"', r)
         if session:
             return str(session[0])
@@ -412,10 +338,16 @@ class filmon(Screen):
                 domain = parsed_uri.hostname
                 sniFactory = SNIFactory(domain)
                 print('uurrll: ', url)
+                url = checkStr(url)
+                print("debug: url:",url)
+                print("debug: url:",type(url))
+                # getPage((url.encode('utf-8')), sniFactory, timeout=5, method='GET', cookies=cj, headers={'Host':'www.filmon.com','X-Requested-With':'XMLHttpRequest','Referer':'https://www.filmon.com','User-Agent': 'Android'}).addCallback(self.get_rtmp)
+            # else:
+                # getPage((url.encode('utf-8')), timeout=5, method='GET', cookies=cj, headers={'Host':'www.filmon.com','X-Requested-With':'XMLHttpRequest','Referer':'https://www.filmon.com','User-Agent': 'Android'}).addCallback(self.get_rtmp)
                 getPage(six.ensure_binary(url, encoding="utf-8"), sniFactory, timeout=5, method=b'GET', cookies=cj, headers={'Host':'www.filmon.com','X-Requested-With':'XMLHttpRequest','Referer':'https://www.filmon.com','User-Agent': 'Android'}).addCallback(self.get_rtmp)
             else:
                 getPage(six.ensure_binary(url, encoding="utf-8"), timeout=5, method=b'GET', cookies=cj, headers={'Host':'www.filmon.com','X-Requested-With':'XMLHttpRequest','Referer':'https://www.filmon.com','User-Agent': 'Android'}).addCallback(self.get_rtmp)
-
+                
         elif self.index == 'group':
             url = self['menulist'].getCurrent()[0][1]
             session = self['menulist'].getCurrent()[0][3]
@@ -424,6 +356,7 @@ class filmon(Screen):
             self.cat(url)
 
     def get_rtmp(self, data):
+        print('i m here-------')
         if PY3:
             data = six.ensure_str(data)   
         # data = checkStr(data)            
@@ -508,7 +441,8 @@ class filmon(Screen):
     def poster_resize(self, poster_path):
             self["poster"].show()
             pixmaps = poster_path
-            if os.path.exists('/var/lib/dpkg/status'):
+            # if os.path.exists('/var/lib/dpkg/status'):
+            if DreamOS():
                 self['poster'].instance.setPixmap(gPixmapPtr())
             else:
                 self['poster'].instance.setPixmap(None)
@@ -523,7 +457,8 @@ class filmon(Screen):
              1,
              '#FF000000'))
             ptr = self.picload.getData()
-            if os.path.exists('/var/lib/dpkg/status'):
+            # if os.path.exists('/var/lib/dpkg/status'):
+            if DreamOS():
                 if self.picload.startDecode(pixmaps, False) == 0:
                     ptr = self.picload.getData()
             else:
@@ -802,195 +737,6 @@ class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifica
     def leavePlayer(self):
         self.close() 
 
-def charRemove(text):
-        char = ["1080p",
-                 "2018",
-                 "2019",
-                 "2020",
-                 "2021",
-                 "2022"
-                 "PF1",
-                 "PF2",
-                 "PF3",
-                 "PF4",
-                 "PF5",
-                 "PF6",
-                 "PF7",
-                 "PF8",
-                 "PF9",
-                 "PF10",
-                 "PF11",
-                 "PF12",
-                 "PF13",
-                 "PF14",
-                 "PF15",
-                 "PF16",
-                 "PF17",
-                 "PF18",
-                 "PF19",
-                 "PF20",
-                 "PF21",
-                 "PF22",
-                 "PF23",
-                 "PF24",
-                 "PF25",
-                 "PF26",
-                 "PF27",
-                 "PF28",
-                 "PF29",
-                 "PF30"
-                 "480p",
-                 "4K",
-                 "720p",
-                 "ANIMAZIONE",
-                 # "APR",
-                 # "AVVENTURA",
-                 "BIOGRAFICO",
-                 "BDRip",
-                 "BluRay",
-                 "CINEMA",
-                 # "COMMEDIA",
-                 "DOCUMENTARIO",
-                 "DRAMMATICO",
-                 "FANTASCIENZA",
-                 "FANTASY",
-                 # "FEB",
-                 # "GEN",
-                 # "GIU",
-                 "HDCAM",
-                 "HDTC",
-                 "HDTS",
-                 "LD",
-                 "MAFIA",
-                 # "MAG",
-                 "MARVEL",
-                 "MD",
-                 # "ORROR",
-                 "NEW_AUDIO",
-                 "POLIZ",
-                 "R3",
-                 "R6",
-                 "SD",
-                 "SENTIMENTALE",
-                 "TC",
-                 "TEEN",
-                 "TELECINE",
-                 "TELESYNC",
-                 "THRILLER",
-                 "Uncensored",
-                 "V2",
-                 "WEBDL",
-                 "WEBRip",
-                 "WEB",
-                 "WESTERN",
-                 "-",
-                 "_",
-                 ".",
-                 "+",
-                 "[",
-                 "]"
-                 ]
-
-        myreplace = text.lower()
-        for ch in char:
-            ch= ch.lower()
-            # if myreplace == ch:
-            myreplace = myreplace.replace(ch, "").replace("  ", " ").replace("   ", " ").strip()
-        return myreplace
-
-
-def decodeHtml(text):
-	text = text.replace('&auml;','ä')
-	text = text.replace('\u00e4','ä')
-	text = text.replace('&#228;','ä')
-	text = text.replace('&oacute;','ó')
-	text = text.replace('&eacute;','e')
-	text = text.replace('&aacute;','a')
-	text = text.replace('&ntilde;','n')
-
-	text = text.replace('&Auml;','Ä')
-	text = text.replace('\u00c4','Ä')
-	text = text.replace('&#196;','Ä')
-	
-	text = text.replace('&ouml;','ö')
-	text = text.replace('\u00f6','ö')
-	text = text.replace('&#246;','ö')
-	
-	text = text.replace('&ouml;','Ö')
-	text = text.replace('\u00d6','Ö')
-	text = text.replace('&#214;','Ö')
-	
-	text = text.replace('&uuml;','ü')
-	text = text.replace('\u00fc','ü')
-	text = text.replace('&#252;','ü')
-	
-	text = text.replace('&Uuml;','Ü')
-	text = text.replace('\u00dc','Ü')
-	text = text.replace('&#220;','Ü')
-	
-	text = text.replace('&szlig;','ß')
-	text = text.replace('\u00df','ß')
-	text = text.replace('&#223;','ß')
-	
-	text = text.replace('&amp;','&')
-	text = text.replace('&quot;','\"')
-	text = text.replace('&quot_','\"')
-
-	text = text.replace('&gt;','>')
-	text = text.replace('&apos;',"'")
-	text = text.replace('&acute;','\'')
-	text = text.replace('&ndash;','-')
-	text = text.replace('&bdquo;','"')
-	text = text.replace('&rdquo;','"')
-	text = text.replace('&ldquo;','"')
-	text = text.replace('&lsquo;','\'')
-	text = text.replace('&rsquo;','\'')
-	text = text.replace('&#034;','\'')
-	text = text.replace('&#038;','&')
-	text = text.replace('&#039;','\'')
-	text = text.replace('&#39;','\'')
-	text = text.replace('&#160;',' ')
-	text = text.replace('\u00a0',' ')
-	text = text.replace('&#174;','')
-	text = text.replace('&#225;','a')
-	text = text.replace('&#233;','e')
-	text = text.replace('&#243;','o')
-	text = text.replace('&#8211;',"-")
-	text = text.replace('\u2013',"-")
-	text = text.replace('&#8216;',"'")
-	text = text.replace('&#8217;',"'")
-	text = text.replace('#8217;',"'")
-	text = text.replace('&#8220;',"'")
-	text = text.replace('&#8221;','"')
-	text = text.replace('&#8222;',',')
-	text = text.replace('&#x27;',"'")
-	text = text.replace('&#8230;','...')
-	text = text.replace('\u2026','...')
-	text = text.replace('&#41;',')')
-	text = text.replace('&lowbar;','_')
-	text = text.replace('&rsquo;','\'')
-	text = text.replace('&lpar;','(')
-	text = text.replace('&rpar;',')')
-	text = text.replace('&comma;',',')
-	text = text.replace('&period;','.')
-	text = text.replace('&plus;','+')
-	text = text.replace('&num;','#')
-	text = text.replace('&excl;','!')
-	text = text.replace('&#039','\'')
-	text = text.replace('&semi;','')
-	text = text.replace('&lbrack;','[')
-	text = text.replace('&rsqb;',']')
-	text = text.replace('&nbsp;','')
-	text = text.replace('&#133;','')
-	text = text.replace('&#4','')
-	text = text.replace('&#40;','')
-	text = text.replace('&atilde;',"'")
-	text = text.replace('&colon;',':')
-	text = text.replace('&sol;','/')
-	text = text.replace('&percnt;','%')
-	text = text.replace('&commmat;',' ')
-	text = text.replace('&#58;',':')
-	return text	
 
 def main(session, **kwargs):
     session.open(filmon)
