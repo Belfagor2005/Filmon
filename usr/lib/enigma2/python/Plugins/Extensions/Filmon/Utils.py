@@ -14,11 +14,14 @@ import base64
 PY3 = sys.version_info.major >= 3
 if PY3:
     # Python 3
-    str = unicode = basestring = str
+    PY3 = True; unicode = str; unichr = chr; long = int
+    # str = unicode = basestring = str
     unichr = chr; long = int
     from urllib.parse import quote
     from urllib.request import urlopen
     from urllib.request import Request
+    from urllib.error import HTTPError, URLError
+    
 else:
     # Python 2
     _str = str
@@ -29,6 +32,7 @@ else:
     from urllib import quote
     from urllib2 import urlopen
     from urllib2 import Request
+    from urllib2 import HTTPError, URLError
 
 def getDesktopSize():
     from enigma import getDesktop
@@ -163,6 +167,7 @@ def freespace():
 
 def b64encoder(source):
     if PY3:
+        import base64
         source = source.encode('utf-8')
     content = base64.b64encode(source).decode('utf-8')
     return content
@@ -170,6 +175,7 @@ def b64encoder(source):
 def b64decoder(source):
     if PY3:
         # source = source.decode('utf-8')
+        import base64
         source = base64.b64decode(source).decode('utf-8')
     content = source
     return content
@@ -195,7 +201,6 @@ try:
 	is_imdb = True
 except Exception:
 	is_imdb = False
-
 
 def substr(data,start,end):
     i1 = data.find(start)
