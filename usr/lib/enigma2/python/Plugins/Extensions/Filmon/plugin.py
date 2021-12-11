@@ -3,12 +3,13 @@
 #--------------------#
 #  coded by Lululla  #
 #   skin by MMark    #
-#     26/11/2021     #
+#     10/12/2021     #
 #--------------------#
 #Info http://t.me/tivustream
 from __future__ import print_function
+# from . import _
 from Components.AVSwitch import AVSwitch
-from Components.ActionMap import NumberActionMap, ActionMap
+from Components.ActionMap import ActionMap
 from Components.Console import Console as iConsole
 from Components.GUIComponent import GUIComponent
 from Components.Label import Label
@@ -20,8 +21,8 @@ from Components.Sources.StaticText import StaticText
 from Components.config import *
 from Plugins.Plugin import PluginDescriptor
 from Screens.InfoBar import MoviePlayer, InfoBar
-from Screens.InfoBarGenerics import InfoBarAudioSelection, InfoBarNotifications 
-from Screens.InfoBarGenerics import InfoBarShowHide, InfoBarMenu, InfoBarSeek 
+from Screens.InfoBarGenerics import InfoBarMenu, InfoBarSeek, InfoBarAudioSelection, InfoBarMoviePlayerSummarySupport, \
+    InfoBarSubtitleSupport, InfoBarSummarySupport, InfoBarServiceErrorPopupSupport, InfoBarNotifications
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from Tools.BoundFunction import boundFunction
@@ -29,7 +30,7 @@ from Tools.Directories import fileExists, resolveFilename, SCOPE_PLUGINS, pathEx
 from Tools.LoadPixmap import LoadPixmap
 from enigma import RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_HALIGN_CENTER, RT_VALIGN_CENTER
 from enigma import eConsoleAppContainer, eServiceReference, iPlayableService, eListboxPythonMultiContent
-from enigma import ePicLoad, loadPNG #, getDesktop
+from enigma import ePicLoad, loadPNG
 from enigma import gFont, gPixmapPtr,  eTimer, eListbox
 from os.path import splitext
 from socket import gaierror, error
@@ -43,10 +44,12 @@ import os
 import re
 import shutil
 import six
-# import socket
 import sys
 import time
-from Plugins.Extensions.Filmon.Utils import *
+try:
+    from Plugins.Extensions.Filmon.Utils import *
+except:
+    from . import Utils
 global skin_path
 
 PY3 = sys.version_info.major >= 3
@@ -54,28 +57,19 @@ print('Py3: ',PY3)
 
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.request import Request
-from six.moves.urllib.error import HTTPError, URLError
-from six.moves.urllib.request import urlretrieve    
 from six.moves.urllib.parse import urlparse
-from six.moves.urllib.parse import parse_qs
-from six.moves.urllib.request import build_opener
-from six.moves.urllib.parse import quote_plus
-from six.moves.urllib.parse import unquote_plus
-from six.moves.urllib.parse import quote
-from six.moves.urllib.parse import unquote
-from six.moves.urllib.parse import urlencode
 
 try:
     import http.cookiejar
     from html.entities import name2codepoint as n2cp
-    from http.client import HTTPConnection, CannotSendRequest, BadStatusLine, HTTPException    
+    from http.client import HTTPConnection, CannotSendRequest, BadStatusLine, HTTPException
 
 except:
     import cookielib
     from htmlentitydefs import name2codepoint as n2cp
     from httplib import HTTPConnection, CannotSendRequest, BadStatusLine, HTTPException
-    
-currversion = '1.5'           
+
+currversion = '1.6'
 cj = {}
 PLUGIN_PATH  = os.path.dirname(sys.modules[__name__].__file__)
 skin_path= PLUGIN_PATH +'/skin'
@@ -84,14 +78,12 @@ desc_plugin = '..:: Live Filmon by Lululla %s ::.. ' % currversion
 
 if isFHD():
     Height = 60
-    # if os.path.exists('/var/lib/dpkg/status'):
     if DreamOS():
         skin_path = skin_path + '/skin_cvs/defaultListScreen_new.xml'
     else:
         skin_path = skin_path + '/skin_pli/defaultListScreen_new.xml'
 else:
     Height = 40
-    # if os.path.exists('/var/lib/dpkg/status'):
     if DreamOS():
         skin_path = skin_path + '/skin_cvs/defaultListScreen.xml'
     else:
@@ -108,15 +100,15 @@ if sslverify:
     class SNIFactory(ssl.ClientContextFactory):
         def __init__(self, hostname=None):
             self.hostname = hostname
-
         def getContext(self):
             ctx = self._contextFactory(self.method)
             if self.hostname:
                 ClientTLSOptions(self.hostname, ctx)
             return ctx
 
-from enigma import addFont
+
 try:
+    from enigma import addFont
     addFont('%s/1.ttf' % PLUGIN_PATH, 'RegularIPTV', 100, 1)
 except Exception as ex:
     print('addfont', ex)
@@ -126,7 +118,7 @@ if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/MediaPlayer'):
     MediaPlayerInstalled = True
 else:
     MediaPlayerInstalled = False
-    
+
 global tmp_image
 tmp_image='/tmp/filmon/poster.png'
 if not pathExists('/tmp/filmon/'):
@@ -137,7 +129,7 @@ else:
 os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.png' + ' /tmp/filmon/poster.png')
 os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.jpg' + ' /tmp/filmon/poster.jpg')
 
-           
+
 class m2list(MenuList):
     def __init__(self, list):
         MenuList.__init__(self, list, False, eListboxPythonMultiContent)
@@ -164,6 +156,7 @@ def show_(name, link, img, session, description):
 def cat_(letter, link):
     res = [(letter, link)]
     res.append(MultiContentEntryText(pos=(0, 0), size=(800, 40), font=8, text=letter, flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER))
+
     return res
 
 class filmon(Screen):
@@ -183,7 +176,7 @@ class filmon(Screen):
          'ok': self.ok,
          'cancel': self.exit,
          'red': self.exit}, -1)
-        self.menulist = []         
+        self.menulist = []
         self['menulist'] = m2list([])
         self['red'] = Label(_('Exit'))
         self['title'] = Label(title_plug)
@@ -194,11 +187,10 @@ class filmon(Screen):
         self.picfile = ''
         self.dnfile = 'False'
         self.currentList = 'menulist'
-
         self.loading_ok = False
-        self.check = 'abc'
-        self.count = 0
-        self.loading = 0
+        # self.check = 'abc'
+        # self.count = 0
+        # self.loading = 0
         self.onLayoutFinish.append(self.downxmlpage)
 
     def up(self):
@@ -221,6 +213,40 @@ class filmon(Screen):
 
     def right(self):
         self[self.currentList].pageDown()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         auswahl = self['menulist'].getCurrent()[0][0]
         self['name'].setText(auswahl)
         self.load_poster()
@@ -228,7 +254,7 @@ class filmon(Screen):
     def downxmlpage(self):
         url = 'http://www.filmon.com/group'
         if PY3:
-            url = b'http://www.filmon.com/group'        
+            url = b'http://www.filmon.com/group'
         getPage(url).addCallback(self._gotPageLoad).addErrback(self.errorLoad)
 
     def errorLoad(self, error):
@@ -240,20 +266,18 @@ class filmon(Screen):
         self.cat_list = []
         global sessionx
         sessionx = self.get_session()
-        # url= six.ensure_str(data)
-        url= data        
+        url= data
         if PY3:
-            url = six.ensure_str(url)    
+            url = six.ensure_str(url)
         print("content 3 =", url)
         try:
             n1 = url.find('<ul class="group-channels"', 0)
             n2 = url.find('<div id="footer">', n1)
         except:
             n1 = url.find(b'<ul class="group-channels"', 0)
-            n2 = url.find(b'<div id="footer">', n1)        
+            n2 = url.find(b'<div id="footer">', n1)
         url = url[n1:n2]
-        regexvideo = 'class="group-item".*?a href="(.*?)".*?logo" src="(.*?)".*?title="(.*?)"'        
-        # regexvideo = 'id="group-channels".*?a href="(.*?)".*?logo" src="(.*?)".*?title="(.*?)"'
+        regexvideo = 'class="group-item".*?a href="(.*?)".*?logo" src="(.*?)".*?title="(.*?)"'
         match = re.compile(regexvideo,re.DOTALL).findall(url)
         for url, img, name in match:
             img = img.replace('\\', '')
@@ -280,27 +304,23 @@ class filmon(Screen):
         req.add_header('X-Requested-With', 'XMLHttpRequest')
         page = urlopen(req)
         r = page.read()
-
         if PY3:
-            r = six.ensure_str(r)    
+            r = six.ensure_str(r)
         print("content 3 =", r)
         try:
             n1 = r.find('channels"', 0)
             n2 = r.find('channels_count"', n1)
         except:
             n1 = r.find('channels"', 0)
-            n2 = r.find('channels_count"', n1)        
-        
+            n2 = r.find('channels_count"', n1)
         r2 = r[n1:n2]
         channels = re.findall('"id":(.*?),"logo":".*?","big_logo":"(.*?)","title":"(.*?)",.*?description":"(.*?)"', r2)
         for id, img, title, description in channels:
             img = img.replace('\\', '')
-            
             id = checkStr(id)
             img = checkStr(img)
-            
             title = checkStr(title)
-            description = checkStr(description)            
+            description = checkStr(description)
             self.cat_list.append(show_(title, id, img, sessionx, description))
         self['menulist'].l.setList(self.cat_list)
         self['menulist'].l.setItemHeight(40)
@@ -310,14 +330,23 @@ class filmon(Screen):
         self.load_poster()
 
     def get_session(self):
+        if sys.version_info.major == 3:
+             import urllib.request as urllib2
+        elif sys.version_info.major == 2:
+             import urllib2
         url = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=rtmp'
-        req = Request(url)
+        req = urllib2.Request(url)
         req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')
-        page = urlopen(req)
-        r = page.read().decode('utf-8')
-        if PY3:
-            r = six.ensure_str(r)
-        session = re.findall('"session_key":"(.*?)"', r)
+        r = urllib2.urlopen(req,None,15)
+        link = r.read()
+        r.close()
+        tlink = link
+        if str(type(tlink)).find('bytes') != -1:
+            try:
+                tlink = tlink.decode("utf-8")
+            except Exception as e:
+                   print("Error: %s." % e)
+        session = re.findall('"session_key":"(.*?)"', tlink)
         if session:
             return str(session[0])
         else:
@@ -327,27 +356,17 @@ class filmon(Screen):
         if self.index == 'cat':
             name = self['menulist'].getCurrent()[0][0]
             id = self['menulist'].getCurrent()[0][1]
-            print('iddddd : ', id)            
+            print('iddddd : ', id)
             session = self['menulist'].getCurrent()[0][3]
             id = checkStr(id)
-            url = 'https://www.filmon.com/ajax/getChannelInfo?channel_id=%s' % id
-            print('url: ', url)
-            print('cj: ', cj)
-            if url.startswith("https") and sslverify:
-                parsed_uri = urlparse(url)
-                domain = parsed_uri.hostname
-                sniFactory = SNIFactory(domain)
-                print('uurrll: ', url)
-                url = checkStr(url)
-                print("debug: url:",url)
-                print("debug: url:",type(url))
-                # getPage((url.encode('utf-8')), sniFactory, timeout=5, method='GET', cookies=cj, headers={'Host':'www.filmon.com','X-Requested-With':'XMLHttpRequest','Referer':'https://www.filmon.com','User-Agent': 'Android'}).addCallback(self.get_rtmp)
-            # else:
-                # getPage((url.encode('utf-8')), timeout=5, method='GET', cookies=cj, headers={'Host':'www.filmon.com','X-Requested-With':'XMLHttpRequest','Referer':'https://www.filmon.com','User-Agent': 'Android'}).addCallback(self.get_rtmp)
-                getPage(six.ensure_binary(url, encoding="utf-8"), sniFactory, timeout=5, method=b'GET', cookies=cj, headers={'Host':'www.filmon.com','X-Requested-With':'XMLHttpRequest','Referer':'https://www.filmon.com','User-Agent': 'Android'}).addCallback(self.get_rtmp)
-            else:
-                getPage(six.ensure_binary(url, encoding="utf-8"), timeout=5, method=b'GET', cookies=cj, headers={'Host':'www.filmon.com','X-Requested-With':'XMLHttpRequest','Referer':'https://www.filmon.com','User-Agent': 'Android'}).addCallback(self.get_rtmp)
-                
+            urlx = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=rtmp'
+            content = ReadUrl2(urlx)
+            regexvideo = 'session_key":"(.*?)"'
+            match = re.compile(regexvideo,re.DOTALL).findall(content)
+            print("In Filmon2 fpage match =", match)
+            url = 'https://www.filmon.com/api-v2/channel/' + id + "?session_key=" + session
+            self.get_rtmp(url)
+
         elif self.index == 'group':
             url = self['menulist'].getCurrent()[0][1]
             session = self['menulist'].getCurrent()[0][3]
@@ -357,12 +376,8 @@ class filmon(Screen):
 
     def get_rtmp(self, data):
         print('i m here-------')
-        if PY3:
-            data = six.ensure_str(data)   
-        # data = checkStr(data)            
-        print(data)    
-        # rtmp = re.findall('"quality":"high","url":"(.*?)"', data)
-        rtmp = re.findall('"quality".*?url"\:"(.*?)"', data)        
+        content = ReadUrl2(data)
+        rtmp = re.findall('"quality".*?url"\:"(.*?)"', content)
         if rtmp:
             fin_url = rtmp[0].replace('\\', '')
             print('fin_url: ', fin_url)
@@ -373,7 +388,6 @@ class filmon(Screen):
         url = data
         name = desc
         self.session.open(Playstream2, name, url)
-
 
     def exit(self):
         if self.index == 'group':
@@ -388,10 +402,10 @@ class filmon(Screen):
             print('description: ', descriptionX)
             self['text'].setText(descriptionX)
         else:
-            self['text'].setText('')        
+            self['text'].setText('')
         jp_link = self['menulist'].getCurrent()[0][2]
         tmp_image = jpg_store = '/tmp/filmon/poster.png'
-        
+
         if tmp_image != None or idx != -1:
             pixmaps = six.ensure_binary(jp_link)
             print("debug: pixmaps:",pixmaps)
@@ -401,10 +415,35 @@ class filmon(Screen):
             tmp_image = b'/tmp/posterx' + ext
             if fileExists(tmp_image):
                 tmp_image = b'/tmp/posterx' + ext
+
             else:
                 m = hashlib.md5()
                 m.update(pixmaps)
                 tmp_image = m.hexdigest()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             try:
                 if pixmaps.startswith(b"https") and sslverify:
                     parsed_uri = urlparse(pixmaps)
@@ -420,7 +459,7 @@ class filmon(Screen):
                 print(ex)
                 print("Error: can't find file or read data")
             return
-            
+
     def downloadError(self, raw):
         try:
             if fileExists(tmp_image):
@@ -432,6 +471,7 @@ class filmon(Screen):
             print(ex)
             print('exe downloadError')
 
+
     def downloadPic(self, data, tmp_image):
         if fileExists(tmp_image):
             self.poster_resize(tmp_image)
@@ -441,7 +481,6 @@ class filmon(Screen):
     def poster_resize(self, poster_path):
             self["poster"].show()
             pixmaps = poster_path
-            # if os.path.exists('/var/lib/dpkg/status'):
             if DreamOS():
                 self['poster'].instance.setPixmap(gPixmapPtr())
             else:
@@ -457,7 +496,6 @@ class filmon(Screen):
              1,
              '#FF000000'))
             ptr = self.picload.getData()
-            # if os.path.exists('/var/lib/dpkg/status'):
             if DreamOS():
                 if self.picload.startDecode(pixmaps, False) == 0:
                     ptr = self.picload.getData()
@@ -478,24 +516,36 @@ class TvInfoBarShowHide():
     STATE_HIDING = 1
     STATE_SHOWING = 2
     STATE_SHOWN = 3
-   
+    skipToggleShow = False
 
     def __init__(self):
-        self["ShowHideActions"] = ActionMap(["InfobarShowHideActions"], {"toggleShow": self.toggleShow,
+        self["ShowHideActions"] = ActionMap(["InfobarShowHideActions"], {"toggleShow": self.OkPressed,
          "hide": self.hide}, 0)
         self.__event_tracker = ServiceEventTracker(screen=self, eventmap={iPlayableService.evStart: self.serviceStarted})
         self.__state = self.STATE_SHOWN
         self.__locked = 0
         self.hideTimer = eTimer()
-        self.hideTimer.start(5000, True)
-
         try:
             self.hideTimer_conn = self.hideTimer.timeout.connect(self.doTimerHide)
-            
         except:
             self.hideTimer.callback.append(self.doTimerHide)
+        self.hideTimer.start(5000, True)
         self.onShow.append(self.__onShow)
         self.onHide.append(self.__onHide)
+
+    def OkPressed(self):
+        self.toggleShow()
+
+    def toggleShow(self):
+        if self.skipToggleShow:
+            self.skipToggleShow = False
+            return
+        if self.__state == self.STATE_HIDDEN:
+            self.show()
+            self.hideTimer.stop()
+        else:
+            self.hide()
+            self.startHideTimer()
 
     def serviceStarted(self):
         if self.execing:
@@ -505,19 +555,19 @@ class TvInfoBarShowHide():
     def __onShow(self):
         self.__state = self.STATE_SHOWN
         self.startHideTimer()
-                
 
     def startHideTimer(self):
         if self.__state == self.STATE_SHOWN and not self.__locked:
+            self.hideTimer.stop()
             idx = config.usage.infobar_timeout.index
             if idx:
                 self.hideTimer.start(idx * 1500, True)
 
     def __onHide(self):
         self.__state = self.STATE_HIDDEN
-                 
-            
+
     def doShow(self):
+        self.hideTimer.stop()
         self.show()
         self.startHideTimer()
 
@@ -525,55 +575,71 @@ class TvInfoBarShowHide():
         self.hideTimer.stop()
         if self.__state == self.STATE_SHOWN:
             self.hide()
-
-    def toggleShow(self):
-        if self.__state == self.STATE_SHOWN:
-            self.hide()
-            self.hideTimer.stop()
-        elif self.__state == self.STATE_HIDDEN:
-            self.show()
-
     def lockShow(self):
-        self.__locked = self.__locked + 1
+        try:
+            self.__locked += 1
+        except:
+            self.__locked = 0
         if self.execing:
             self.show()
             self.hideTimer.stop()
+            self.skipToggleShow = False
 
     def unlockShow(self):
-        self.__locked = self.__locked - 1
+        try:
+            self.__locked -= 1
+        except:
+            self.__locked = 0
+        if self.__locked < 0:
+            self.__locked = 0
         if self.execing:
             self.startHideTimer()
 
     def debug(obj, text = ""):
         print(text + " %s\n" % obj)
-                                           
-class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifications, InfoBarAudioSelection, TvInfoBarShowHide): #,InfoBarSubtitleSupport
+
+class Playstream2(
+    InfoBarBase,
+    InfoBarMenu,
+    InfoBarSeek,
+    InfoBarAudioSelection,
+    InfoBarSubtitleSupport,
+    InfoBarNotifications,
+    TvInfoBarShowHide,
+    Screen
+):
     STATE_IDLE = 0
     STATE_PLAYING = 1
     STATE_PAUSED = 2
     ENABLE_RESUME_SUPPORT = True
     ALLOW_SUSPEND = True
-    screen_timeout = 5000                          
+    screen_timeout = 5000
 
     def __init__(self, session, name, url):
+        global SREF, streaml
         Screen.__init__(self, session)
+        self.session = session
+        global _session
+        _session = session
         self.skinName = 'MoviePlayer'
-        title = 'Play'
-        # InfoBarBase.__init__(self)
-        # InfoBarShowHide.__init__(self)
-        InfoBarMenu.__init__(self)
-        InfoBarNotifications.__init__(self)
-        InfoBarBase.__init__(self, steal_current_service=True)
-        TvInfoBarShowHide.__init__(self)
-        InfoBarAudioSelection.__init__(self)
-        InfoBarSeek.__init__(self)
+        title = name
+        streaml = False
+
+        for x in InfoBarBase, \
+                InfoBarMenu, \
+
+                InfoBarSeek, \
+                InfoBarAudioSelection, \
+                InfoBarSubtitleSupport, \
+                InfoBarNotifications, \
+                TvInfoBarShowHide:
+            x.__init__(self)
         try:
             self.init_aspect = int(self.getAspect())
         except:
-            self.init_aspect = 0     
+            self.init_aspect = 0
         self.new_aspect = self.init_aspect
-        self['actions'] = ActionMap(['WizardActions',
-         'MoviePlayerActions',
+        self['actions'] = ActionMap(['MoviePlayerActions',
          'MovieSelectionActions',
          'MediaPlayerActions',
          'EPGSelectActions',
@@ -591,19 +657,22 @@ class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifica
          'cancel': self.cancel,
          'back': self.cancel}, -1)
         self.allowPiP = False
-        # InfoBarSeek.__init__(self, ActionMap='InfobarSeekActions')                      
         self.service = None
-        service = None                      
-        url = url.replace(':', '%3a')
+        service = None
         self.url = url
         self.pcip = 'None'
         self.name = decodeHtml(name)
-        self.state = self.STATE_PLAYING                                 
-        self.srefOld = self.session.nav.getCurrentlyPlayingServiceReference()
-        self.onLayoutFinish.append(self.cicleStreamType)
+        self.state = self.STATE_PLAYING
+        SREF = self.session.nav.getCurrentlyPlayingServiceReference()
+        # self.onLayoutFinish.append(self.cicleStreamType)
+        if '8088' in str(self.url):
+            # self.onLayoutFinish.append(self.slinkPlay)
+            self.onFirstExecBegin.append(self.slinkPlay)
+        else:
+            # self.onLayoutFinish.append(self.cicleStreamType)
+            self.onFirstExecBegin.append(self.cicleStreamType)
         self.onClose.append(self.cancel)
-        return
-        
+
     def getAspect(self):
         return AVSwitch().getAspectRatioSetting()
 
@@ -636,8 +705,8 @@ class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifica
         if temp > 6:
             temp = 0
         self.new_aspect = temp
-        self.setAspect(temp)        
-        
+        self.setAspect(temp)
+
     def showinfo(self):
         debug = True
         sTitle = ''
@@ -656,44 +725,67 @@ class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifica
             sTagCodec = currPlay.info().getInfoString(iServiceInformation.sTagCodec)
             sTagVideoCodec = currPlay.info().getInfoString(iServiceInformation.sTagVideoCodec)
             sTagAudioCodec = currPlay.info().getInfoString(iServiceInformation.sTagAudioCodec)
-            message = 'stitle:' + str(sTitle) + '\n' + 'sServiceref:' + str(sServiceref) + '\n' + 'sTagCodec:' + str(sTagCodec) + '\n' + 'sTagVideoCodec:' + str(sTagVideoCodec) + '\n' + 'sTagAudioCodec :' + str(sTagAudioCodec)
+            message = 'stitle:' + str(sTitle) + '\n' + 'sServiceref:' + str(sServiceref) + '\n' + 'sTagCodec:' + str(sTagCodec) + '\n' + 'sTagVideoCodec:' + str(sTagVideoCodec) + '\n' + 'sTagAudioCodec : ' + str(sTagAudioCodec)
             self.mbox = self.session.open(MessageBox, message, MessageBox.TYPE_INFO)
         except:
             pass
         return
-        
+
     def showIMDB(self):
-        if os.path.exists("/usr/lib/enigma2/python/Plugins/Extensions/TMBD"):
+        TMDB = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('TMDB'))
+        IMDb = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('IMDb'))
+        if os.path.exists(TMDB):
             from Plugins.Extensions.TMBD.plugin import TMBD
             text_clear = self.name
             text = charRemove(text_clear)
             self.session.open(TMBD, text, False)
-        elif os.path.exists("/usr/lib/enigma2/python/Plugins/Extensions/IMDb"):
+        elif os.path.exists(IMDb):
             from Plugins.Extensions.IMDb.plugin import IMDB
             text_clear = self.name
             text = charRemove(text_clear)
-            HHHHH = text
-            self.session.open(IMDB, HHHHH)
+            self.session.open(IMDB, text)
         else:
             text_clear = self.name
-            self.session.open(MessageBox, text_clear, MessageBox.TYPE_INFO)  
-            
-    def openTest(self,servicetype, url):
-        url = url
-        ref = str(servicetype) +':0:1:0:0:0:0:0:0:0:' + str(url)
-        print('final reference :   ', ref)
+            self.session.open(MessageBox, text_clear, MessageBox.TYPE_INFO)
+
+    def slinkPlay(self, url):
+        name = self.name
+        ref = "{0}:{1}".format(url.replace(":", "%3A"), name.replace(":", "%3A"))
+        print('final reference:   ', ref)
         sref = eServiceReference(ref)
-        sref.setName(self.name)
+        sref.setName(name)
         self.session.nav.stopService()
         self.session.nav.playService(sref)
-        
+
+    def openTest(self, servicetype, url):
+        name = self.name
+        ref = "{0}:0:0:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3A"), name.replace(":", "%3A"))
+        print('reference:   ', ref)
+        if streaml == True:
+            url = 'http://127.0.0.1:8088/' + str(url)
+            ref = "{0}:0:1:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3A"), name.replace(":", "%3A"))
+            print('streaml reference:   ', ref)
+        print('final reference:   ', ref)
+        sref = eServiceReference(ref)
+        sref.setName(name)
+        self.session.nav.stopService()
+        self.session.nav.playService(sref)
+
     def cicleStreamType(self):
+        global streml
+        streaml = False
         from itertools import cycle, islice
-        self.servicetype ='4097'#str(config.plugins.exodus.services.value)# 
+        self.servicetype = '4097'
         print('servicetype1: ', self.servicetype)
         url = str(self.url)
         currentindex = 0
         streamtypelist = ["4097"]
+        # if "youtube" in str(self.url):
+            # self.mbox = self.session.open(MessageBox, _('For Stream Youtube coming soon!'), MessageBox.TYPE_INFO, timeout=5)
+            # return
+        if isStreamlinkAvailable():
+            streamtypelist.append("5002") #ref = '5002:0:1:0:0:0:0:0:0:0:http%3a//127.0.0.1%3a8088/' + url
+            streaml = True
         if os.path.exists("/usr/bin/gstplayer"):
             streamtypelist.append("5001")
         if os.path.exists("/usr/bin/exteplayer3"):
@@ -705,26 +797,37 @@ class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifica
                 currentindex = index
                 break
         nextStreamType = islice(cycle(streamtypelist), currentindex + 1, None)
-        self.servicetype = int(next(nextStreamType))
+        self.servicetype = str(next(nextStreamType))
         print('servicetype2: ', self.servicetype)
         self.openTest(self.servicetype, url)
 
-    def keyNumberGlobal(self, number):
-        self['text'].number(number)     
-        
+    def up(self):
+        pass
+
+    def down(self):
+        self.up()
+
+    def doEofInternal(self, playing):
+        self.close()
+
+    def __evEOF(self):
+        self.end = True
+
+    def showAfterSeek(self):
+        if isinstance(self, TvInfoBarShowHide):
+            self.doShow()
+
     def cancel(self):
-        if os.path.exists('/tmp/hls.avi'):
+        if os.path.isfile('/tmp/hls.avi'):
             os.remove('/tmp/hls.avi')
         self.session.nav.stopService()
-        self.session.nav.playService(self.srefOld)
-        if self.pcip != 'None':
-            url2 = 'http://' + self.pcip + ':8080/requests/status.xml?command=pl_stop'
-            resp = urlopen(url2)
+        self.session.nav.playService(SREF)
         if not self.new_aspect == self.init_aspect:
             try:
                 self.setAspect(self.init_aspect)
             except:
                 pass
+        streaml = False
         self.close()
 
     def showVideoInfo(self):
@@ -734,11 +837,28 @@ class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek, InfoBarNotifica
             self.infoCallback()
         return
 
+    def showAfterSeek(self):
+        if isinstance(self, TvInfoBarShowHide):
+            self.doShow()
     def leavePlayer(self):
-        self.close() 
+        self.close()
 
+def checks():
+    from Plugins.Extensions.Filmon.Utils import checkInternet
+    checkInternet()
+    chekin= False
+    if checkInternet():
+        chekin = True
+    return chekin
 
 def main(session, **kwargs):
+    if checks:
+        try:
+            from Plugins.Extensions.Filmon.Update import upd_done
+            upd_done()
+        except:
+            pass
+# def main(session, **kwargs):
     session.open(filmon)
 
 def Plugins(**kwargs):
