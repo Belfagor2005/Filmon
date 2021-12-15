@@ -29,9 +29,15 @@ from Tools.BoundFunction import boundFunction
 from Tools.Directories import fileExists, resolveFilename, SCOPE_PLUGINS, pathExists
 from Tools.LoadPixmap import LoadPixmap
 from enigma import RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_HALIGN_CENTER, RT_VALIGN_CENTER
-from enigma import eConsoleAppContainer, eServiceReference, iPlayableService, eListboxPythonMultiContent
+from enigma import eConsoleAppContainer, eListboxPythonMultiContent
 from enigma import ePicLoad, loadPNG
-from enigma import gFont, gPixmapPtr,  eTimer, eListbox
+from enigma import gFont, gPixmapPtr, eTimer, eListbox
+from enigma import eServiceCenter
+from enigma import eServiceReference
+from enigma import eSize 
+from enigma import iServiceInformation
+from enigma import quitMainloop
+from enigma import iPlayableService 
 from os.path import splitext
 from socket import gaierror, error
 from sys import version_info
@@ -213,40 +219,6 @@ class filmon(Screen):
 
     def right(self):
         self[self.currentList].pageDown()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         auswahl = self['menulist'].getCurrent()[0][0]
         self['name'].setText(auswahl)
         self.load_poster()
@@ -627,7 +599,6 @@ class Playstream2(
 
         for x in InfoBarBase, \
                 InfoBarMenu, \
-
                 InfoBarSeek, \
                 InfoBarAudioSelection, \
                 InfoBarSubtitleSupport, \
