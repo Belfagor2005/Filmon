@@ -58,20 +58,31 @@ except:
     from . import Utils
 global skin_path
 
+PY3 = False
 PY3 = sys.version_info.major >= 3
 print('Py3: ',PY3)
 
-from six.moves.urllib.request import urlopen
-from six.moves.urllib.request import Request
-from six.moves.urllib.parse import urlparse
+try:
+    import http.cookiejar as cookielib
+    from urllib.parse import urlencode
+    from urllib.parse import quote
+    from urllib.parse import urlparse
+    from urllib.request import Request
+    from urllib.request import urlopen
+    PY3 = True; unicode = str; unichr = chr; long = int; xrange = range
+except:
+    import cookielib
+    from urllib import urlencode
+    from urllib import quote
+    from urlparse import urlparse
+    from urllib2 import Request
+    from urllib2 import urlopen
 
 try:
-    import http.cookiejar
     from html.entities import name2codepoint as n2cp
     from http.client import HTTPConnection, CannotSendRequest, BadStatusLine, HTTPException
 
 except:
-    import cookielib
     from htmlentitydefs import name2codepoint as n2cp
     from httplib import HTTPConnection, CannotSendRequest, BadStatusLine, HTTPException
 
@@ -118,12 +129,6 @@ try:
     addFont('%s/1.ttf' % PLUGIN_PATH, 'RegularIPTV', 100, 1)
 except Exception as ex:
     print('addfont', ex)
-
-if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/MediaPlayer'):
-    from Plugins.Extensions.MediaPlayer import *
-    MediaPlayerInstalled = True
-else:
-    MediaPlayerInstalled = False
 
 global tmp_image
 tmp_image='/tmp/filmon/poster.png'
@@ -325,35 +330,46 @@ class filmon(Screen):
             return 'none'
 
     def ok(self):
-        if self.index == 'cat':
-            name = self['menulist'].getCurrent()[0][0]
-            id = self['menulist'].getCurrent()[0][1]
-            print('iddddd : ', id)
-            session = self['menulist'].getCurrent()[0][3]
-            id = checkStr(id)
-            urlx = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=rtmp'
-            content = ReadUrl2(urlx)
-            regexvideo = 'session_key":"(.*?)"'
-            match = re.compile(regexvideo,re.DOTALL).findall(content)
-            print("In Filmon2 fpage match =", match)
-            url = 'https://www.filmon.com/api-v2/channel/' + id + "?session_key=" + session
-            self.get_rtmp(url)
+        try:
+            if self.index == 'cat':
+                name = self['menulist'].getCurrent()[0][0]
+                id = self['menulist'].getCurrent()[0][1]
+                print('iddddd : ', id)
+                session = self['menulist'].getCurrent()[0][3]
+                id = checkStr(id)
+                urlx = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=rtmp'
+                content = ReadUrl2(urlx)
+                regexvideo = 'session_key":"(.*?)"'
+                match = re.compile(regexvideo,re.DOTALL).findall(content)
+                print("In Filmon2 fpage match =", match)
+                url = 'https://www.filmon.com/api-v2/channel/' + id + "?session_key=" + session
+                self.get_rtmp(url)
 
-        elif self.index == 'group':
-            url = self['menulist'].getCurrent()[0][1]
-            session = self['menulist'].getCurrent()[0][3]
-            print('url: ', url)
-            print('session: ', session)
-            self.cat(url)
+            elif self.index == 'group':
+                url = self['menulist'].getCurrent()[0][1]
+                session = self['menulist'].getCurrent()[0][3]
+                print('url: ', url)
+                print('session: ', session)
+                self.cat(url)
+
+        except Exception as ex:
+            print(ex)
+            print("Error: can't find file or read data")
+
 
     def get_rtmp(self, data):
-        print('i m here-------')
-        content = ReadUrl2(data)
-        rtmp = re.findall('"quality".*?url"\:"(.*?)"', content)
-        if rtmp:
-            fin_url = rtmp[0].replace('\\', '')
-            print('fin_url: ', fin_url)
-            self.play_that_shit(str(fin_url))
+        try:
+            print('i m here-------')
+            content = ReadUrl2(data)
+            rtmp = re.findall('"quality".*?url"\:"(.*?)"', content)
+            if rtmp:
+                fin_url = rtmp[0].replace('\\', '')
+                print('fin_url: ', fin_url)
+                self.play_that_shit(str(fin_url))
+        except Exception as ex:
+            print(ex)
+            print("Error: can't find file or read data")
+
 
     def play_that_shit(self, data):
         desc = self['menulist'].l.getCurrentSelection()[0][0]
@@ -392,30 +408,6 @@ class filmon(Screen):
                 m = hashlib.md5()
                 m.update(pixmaps)
                 tmp_image = m.hexdigest()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             try:
                 if pixmaps.startswith(b"https") and sslverify:
                     parsed_uri = urlparse(pixmaps)
@@ -619,12 +611,12 @@ class Playstream2(
          'ColorActions',
          'InfobarShowHideActions',
          'InfobarActions',
-         'InfobarSeekActions'], {'leavePlayer': self.cancel,
+         'InfobarSeekActions'], {'stop': self.cancel,
          'epg': self.showIMDB,
          'info': self.showinfo,
          # 'info': self.cicleStreamType,
          'tv': self.cicleStreamType,
-         'stop': self.leavePlayer,
+         # 'stop': self.leavePlayer,
          'cancel': self.cancel,
          'back': self.cancel}, -1)
         self.allowPiP = False
@@ -811,6 +803,7 @@ class Playstream2(
     def showAfterSeek(self):
         if isinstance(self, TvInfoBarShowHide):
             self.doShow()
+
     def leavePlayer(self):
         self.close()
 
