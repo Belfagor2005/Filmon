@@ -14,7 +14,7 @@ from Components.Console import Console as iConsole
 from Components.GUIComponent import GUIComponent
 from Components.Label import Label
 from Components.MenuList import MenuList
-from Components.MultiContent import MultiContentEntryText
+from Components.MultiContent import MultiContentEntryText, MultiContentEntryPixmapAlphaTest
 from Components.Pixmap import Pixmap, MovingPixmap
 from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
 from Components.Sources.StaticText import StaticText
@@ -141,18 +141,34 @@ os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.png' + ' /tmp/filmon/poster.
 os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.jpg' + ' /tmp/filmon/poster.jpg')
 
 
+# class m2list(MenuList):
+    # def __init__(self, list):
+        # MenuList.__init__(self, list, False, eListboxPythonMultiContent)
+        # self.l.setFont(0, gFont('Regular', 14))
+        # self.l.setFont(1, gFont('Regular', 16))
+        # self.l.setFont(2, gFont('Regular', 18))
+        # self.l.setFont(3, gFont('Regular', 20))
+        # self.l.setFont(4, gFont('Regular', 22))
+        # self.l.setFont(5, gFont('Regular', 24))
+        # self.l.setFont(6, gFont('Regular', 26))
+        # self.l.setFont(7, gFont('Regular', 28))
+        # self.l.setFont(8, gFont('Regular', 32))
+
+
 class m2list(MenuList):
     def __init__(self, list):
-        MenuList.__init__(self, list, False, eListboxPythonMultiContent)
-        self.l.setFont(0, gFont('Regular', 14))
-        self.l.setFont(1, gFont('Regular', 16))
-        self.l.setFont(2, gFont('Regular', 18))
-        self.l.setFont(3, gFont('Regular', 20))
-        self.l.setFont(4, gFont('Regular', 22))
-        self.l.setFont(5, gFont('Regular', 24))
-        self.l.setFont(6, gFont('Regular', 26))
-        self.l.setFont(7, gFont('Regular', 28))
-        self.l.setFont(8, gFont('Regular', 32))
+        MenuList.__init__(self, list, True, eListboxPythonMultiContent)
+        if isFHD():
+            self.l.setItemHeight(50)
+            textfont = int(34)
+            self.l.setFont(0, gFont('Regular', textfont))
+        else:
+            self.l.setItemHeight(50)
+            textfont = int(24)
+            self.l.setFont(0, gFont('Regular', textfont))
+
+
+
 
 def show_(name, link, img, session, description):
     res = [(name,
@@ -160,14 +176,33 @@ def show_(name, link, img, session, description):
       img,
       session,
       description)]
-    res.append(MultiContentEntryText(pos=(0, 0), size=(800, 40), font=8, text=name, flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER))
+    page1 = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/images_new/page_select.png".format('Filmon'))
+    res.append(MultiContentEntryPixmapAlphaTest(pos = (10, 10), size = (34, 25), png = loadPNG(page1)))
+    res.append(MultiContentEntryText(pos=(60, 0), size=(1000, 50), font=0, text=name, flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER))
     return res
+
+# def show_(name, link, img, session, description):
+    # res = [(name,
+      # link,
+      # img,
+      # session,
+      # description)]
+    # png = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/res/pics/setting.png".format('parsatv'))
+    # if isFHD():
+        # res.append(MultiContentEntryPixmapAlphaTest(pos = (10, 10), size = (34, 25), png = loadPNG(png)))
+        # res.append(MultiContentEntryText(pos = (60, 0), size = (1900, 50), font = 0, text = name, color = 0xa6d1fe, flags = RT_HALIGN_LEFT | RT_VALIGN_CENTER))
+    # else:
+        # res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 10), size=(34, 25), png=loadPNG(png)))
+        # res.append(MultiContentEntryText(pos = (60, 0), size = (1000, 50), font = 0, text = name, color = 0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
+    # return res
+
 
 
 def cat_(letter, link):
     res = [(letter, link)]
-    res.append(MultiContentEntryText(pos=(0, 0), size=(800, 40), font=8, text=letter, flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER))
-
+    # page2 = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/images_new/page_select.png".format('Filmon'))    
+    # res.append(MultiContentEntryPixmapAlphaTest(pos = (10, 10), size = (34, 25), png = loadPNG(page2)))    
+    res.append(MultiContentEntryText(pos=(60, 0), size=(1000, 50), font=0, text=letter, flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER))
     return res
 
 class filmon(Screen):
@@ -265,7 +300,7 @@ class filmon(Screen):
             name = checkStr(name)
             self.cat_list.append(show_(name, url, img, sessionx, pic))
         self['menulist'].l.setList(self.cat_list)
-        self['menulist'].l.setItemHeight(40)
+        self['menulist'].l.setItemHeight(50)
         self['menulist'].moveToIndex(0)
         auswahl = self['menulist'].getCurrent()[0][0]
         self['name'].setText(auswahl)
@@ -300,7 +335,7 @@ class filmon(Screen):
             description = checkStr(description)
             self.cat_list.append(show_(title, id, img, sessionx, description))
         self['menulist'].l.setList(self.cat_list)
-        self['menulist'].l.setItemHeight(40)
+        self['menulist'].l.setItemHeight(50)
         self['menulist'].moveToIndex(0)
         auswahl = self['menulist'].getCurrent()[0][0]
         self['name'].setText(auswahl)
