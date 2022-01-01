@@ -26,7 +26,7 @@ from Screens.InfoBarGenerics import InfoBarMenu, InfoBarSeek, InfoBarAudioSelect
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from Tools.BoundFunction import boundFunction
-from Tools.Directories import fileExists, resolveFilename, SCOPE_PLUGINS, pathExists
+from Tools.Directories import resolveFilename, SCOPE_PLUGINS, pathExists
 from Tools.LoadPixmap import LoadPixmap
 from enigma import RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_HALIGN_CENTER, RT_VALIGN_CENTER
 from enigma import eConsoleAppContainer, eListboxPythonMultiContent
@@ -117,12 +117,12 @@ if sslverify:
     class SNIFactory(ssl.ClientContextFactory):
         def __init__(self, hostname=None):
             self.hostname = hostname
+            
         def getContext(self):
             ctx = self._contextFactory(self.method)
             if self.hostname:
                 ClientTLSOptions(self.hostname, ctx)
             return ctx
-
 
 try:
     from enigma import addFont
@@ -140,21 +140,6 @@ else:
 os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.png' + ' /tmp/filmon/poster.png')
 os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.jpg' + ' /tmp/filmon/poster.jpg')
 
-
-# class m2list(MenuList):
-    # def __init__(self, list):
-        # MenuList.__init__(self, list, False, eListboxPythonMultiContent)
-        # self.l.setFont(0, gFont('Regular', 14))
-        # self.l.setFont(1, gFont('Regular', 16))
-        # self.l.setFont(2, gFont('Regular', 18))
-        # self.l.setFont(3, gFont('Regular', 20))
-        # self.l.setFont(4, gFont('Regular', 22))
-        # self.l.setFont(5, gFont('Regular', 24))
-        # self.l.setFont(6, gFont('Regular', 26))
-        # self.l.setFont(7, gFont('Regular', 28))
-        # self.l.setFont(8, gFont('Regular', 32))
-
-
 class m2list(MenuList):
     def __init__(self, list):
         MenuList.__init__(self, list, True, eListboxPythonMultiContent)
@@ -167,9 +152,6 @@ class m2list(MenuList):
             textfont = int(24)
             self.l.setFont(0, gFont('Regular', textfont))
 
-
-
-
 def show_(name, link, img, session, description):
     res = [(name,
       link,
@@ -180,23 +162,6 @@ def show_(name, link, img, session, description):
     res.append(MultiContentEntryPixmapAlphaTest(pos = (10, 10), size = (34, 25), png = loadPNG(page1)))
     res.append(MultiContentEntryText(pos=(60, 0), size=(1000, 50), font=0, text=name, flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER))
     return res
-
-# def show_(name, link, img, session, description):
-    # res = [(name,
-      # link,
-      # img,
-      # session,
-      # description)]
-    # png = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/res/pics/setting.png".format('parsatv'))
-    # if isFHD():
-        # res.append(MultiContentEntryPixmapAlphaTest(pos = (10, 10), size = (34, 25), png = loadPNG(png)))
-        # res.append(MultiContentEntryText(pos = (60, 0), size = (1900, 50), font = 0, text = name, color = 0xa6d1fe, flags = RT_HALIGN_LEFT | RT_VALIGN_CENTER))
-    # else:
-        # res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 10), size=(34, 25), png=loadPNG(png)))
-        # res.append(MultiContentEntryText(pos = (60, 0), size = (1000, 50), font = 0, text = name, color = 0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
-    # return res
-
-
 
 def cat_(letter, link):
     res = [(letter, link)]
@@ -436,7 +401,7 @@ class filmon(Screen):
             path = urlparse(pixmaps).path
             ext = splitext(path)[1]
             tmp_image = b'/tmp/posterx' + ext
-            if fileExists(tmp_image):
+            if file_exists(tmp_image):
                 tmp_image = b'/tmp/posterx' + ext
 
             else:
@@ -461,7 +426,7 @@ class filmon(Screen):
 
     def downloadError(self, raw):
         try:
-            if fileExists(tmp_image):
+            if file_exists(tmp_image):
                 self.poster_resize(tmp_image)
             else:
                 os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.png' + ' /tmp/filmon/poster.png')
@@ -472,7 +437,7 @@ class filmon(Screen):
 
 
     def downloadPic(self, data, tmp_image):
-        if fileExists(tmp_image):
+        if file_exists(tmp_image):
             self.poster_resize(tmp_image)
         else:
             print('logo not found')
@@ -748,7 +713,7 @@ class Playstream2(
 
     def slinkPlay(self, url):
         name = self.name
-        ref = "{0}:{1}".format(url.replace(":", "%3A"), name.replace(":", "%3A"))
+        ref = "{0}:{1}".format(url.replace(":", "%3a"), name.replace(":", "%3a"))
         print('final reference:   ', ref)
         sref = eServiceReference(ref)
         sref.setName(name)
@@ -757,11 +722,11 @@ class Playstream2(
 
     def openTest(self, servicetype, url):
         name = self.name
-        ref = "{0}:0:0:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3A"), name.replace(":", "%3A"))
+        ref = "{0}:0:0:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3a"), name.replace(":", "%3a"))
         print('reference:   ', ref)
         if streaml == True:
             url = 'http://127.0.0.1:8088/' + str(url)
-            ref = "{0}:0:1:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3A"), name.replace(":", "%3A"))
+            ref = "{0}:0:1:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3a"), name.replace(":", "%3a"))
             print('streaml reference:   ', ref)
         print('final reference:   ', ref)
         sref = eServiceReference(ref)
