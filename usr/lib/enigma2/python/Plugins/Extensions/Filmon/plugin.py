@@ -3,7 +3,7 @@
 #--------------------#
 #  coded by Lululla  #
 #   skin by MMark    #
-#     10/12/2021     #
+#     06/01/2022     #
 #--------------------#
 #Info http://t.me/tivustream
 from __future__ import print_function
@@ -379,6 +379,7 @@ class filmon(Screen):
 
     def exit(self):
         if self.index == 'group':
+            deletetmp()
             self.close()
         elif self.index == 'cat':
             self.downxmlpage()
