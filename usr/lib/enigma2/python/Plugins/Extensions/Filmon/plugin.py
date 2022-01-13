@@ -3,7 +3,7 @@
 #--------------------#
 #  coded by Lululla  #
 #   skin by MMark    #
-#     06/01/2022     #
+#     13/01/2022     #
 #--------------------#
 #Info http://t.me/tivustream
 from __future__ import print_function
@@ -39,6 +39,7 @@ from enigma import iServiceInformation
 from enigma import quitMainloop
 from enigma import iPlayableService 
 from os.path import splitext
+from os.path import exists as file_exists
 from socket import gaierror, error
 from sys import version_info
 from time import *
@@ -127,8 +128,8 @@ if sslverify:
 try:
     from enigma import addFont
     addFont('%s/1.ttf' % PLUGIN_PATH, 'RegularIPTV', 100, 1)
-except Exception as ex:
-    print('addfont', ex)
+except Exception as e:
+    print('addfont', str(e))
 
 global tmp_image
 tmp_image='/tmp/filmon/poster.png'
@@ -322,7 +323,7 @@ class filmon(Screen):
             try:
                 tlink = tlink.decode("utf-8")
             except Exception as e:
-                   print("Error: %s." % e)
+                   print("Error: %s." % str(e))
         session = re.findall('"session_key":"(.*?)"', tlink)
         if session:
             return str(session[0])
@@ -352,8 +353,8 @@ class filmon(Screen):
                 print('session: ', session)
                 self.cat(url)
 
-        except Exception as ex:
-            print(ex)
+        except Exception as e:
+            print(str(e))
             print("Error: can't find file or read data")
 
 
@@ -366,8 +367,8 @@ class filmon(Screen):
                 fin_url = rtmp[0].replace('\\', '')
                 print('fin_url: ', fin_url)
                 self.play_that_shit(str(fin_url))
-        except Exception as ex:
-            print(ex)
+        except Exception as e:
+            print(str(e))
             print("Error: can't find file or read data")
 
 
@@ -420,8 +421,8 @@ class filmon(Screen):
                     downloadPage(pixmaps, tmp_image, sniFactory, timeout=5).addCallback(self.downloadPic, tmp_image).addErrback(self.downloadError)
                 else:
                     downloadPage(pixmaps, tmp_image).addCallback(self.downloadPic, tmp_image).addErrback(self.downloadError)
-            except Exception as ex:
-                print(ex)
+            except Exception as e:
+                print(str(e))
                 print("Error: can't find file or read data")
             return
 
@@ -432,8 +433,8 @@ class filmon(Screen):
             else:
                 os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.png' + ' /tmp/filmon/poster.png')
                 self.poster_resize(tmp_image)
-        except Exception as ex:
-            print(ex)
+        except Exception as e:
+            print(str(e))
             print('exe downloadError')
 
 
