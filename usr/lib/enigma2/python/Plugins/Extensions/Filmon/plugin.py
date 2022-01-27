@@ -3,7 +3,7 @@
 #--------------------#
 #  coded by Lululla  #
 #   skin by MMark    #
-#     13/01/2022     #
+#     25/01/2022     #
 #--------------------#
 #Info http://t.me/tivustream
 from __future__ import print_function
@@ -144,14 +144,14 @@ os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.jpg' + ' /tmp/filmon/poster.
 class m2list(MenuList):
     def __init__(self, list):
         MenuList.__init__(self, list, True, eListboxPythonMultiContent)
+        self.l.setItemHeight(50)
+        textfont = int(24)
+        self.l.setFont(0, gFont('Regular', textfont))        
         if isFHD():
             self.l.setItemHeight(50)
             textfont = int(34)
             self.l.setFont(0, gFont('Regular', textfont))
-        else:
-            self.l.setItemHeight(50)
-            textfont = int(24)
-            self.l.setFont(0, gFont('Regular', textfont))
+
 
 def show_(name, link, img, session, description):
     res = [(name,
@@ -160,7 +160,7 @@ def show_(name, link, img, session, description):
       session,
       description)]
     page1 = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/images_new/page_select.png".format('Filmon'))
-    res.append(MultiContentEntryPixmapAlphaTest(pos = (10, 10), size = (34, 25), png = loadPNG(page1)))
+    res.append(MultiContentEntryPixmapAlphaTest(pos = (10, 12), size = (34, 25), png = loadPNG(page1)))
     res.append(MultiContentEntryText(pos=(60, 0), size=(1000, 50), font=0, text=name, flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER))
     return res
 
