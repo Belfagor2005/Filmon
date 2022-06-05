@@ -4,7 +4,7 @@
 ****************************************
 *        coded by Lululla & PCD        *
 *             skin by MMark            *
-*             05/03/2022               *
+*             05/06/2022               *
 *       Skin by MMark                  *
 ****************************************
 #--------------------#
@@ -358,21 +358,6 @@ class filmon(Screen):
         else:
             return 'none'
 
-    # def ok(self):
-        # try:
-            # if self.index == 'cat':
-                # name = self['menulist'].getCurrent()[0][0]
-                # id = self['menulist'].getCurrent()[0][1] #category
-                # idx = self['menulist'].getCurrent()[0][2] #logo
-                # idxx = self['menulist'].getCurrent()[0][3] #session
-                # print('name : ', name)
-                # print('iddddd : ', id)
-                # print('iddddd : ', idx)                
-                # print('iddddd : ', idxx)                
-                # sessionx = self.get_session()
-                # url1 = 'https://www.filmon.com/tv/api/channel/' + str(id) + "?session_key=" + sessionx
-                # print("url get 2 match 2=", url1)
-                # self.get_rtmp(url1)
     def ok(self):
         try:
             if self.index == 'cat':
@@ -410,46 +395,6 @@ class filmon(Screen):
         except Exception as ex:
             print(ex)
             print("Error: can't find file or read data")
-    # def get_rtmp(self, data):
-        # try:
-            # name = self['menulist'].getCurrent()[0][0]
-            # req = Request(data)
-            # req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')
-            # req.add_header('Referer', 'https://www.filmon.com/')
-            # req.add_header('X-Requested-With', 'XMLHttpRequest')            
-            # page = urlopen(req, None, 15)
-            # content = page.read() #.decode('utf-8')
-            # if PY3:
-                # content = six.ensure_str(content) 
-            # print('content: ', content)
-            # y = json.loads(content)
-            # urls = []
-            # url = ''
-            # streams = y["streams"]
-            # quality = [x["quality"] for x in y["streams"]]
-            # url = [z["url"] for z in y["streams"]]
-            # print('In Videos2 name1 =', quality) 
-            # print("In Videos2 url1 =", url)    
-            # if 'high' in quality :
-                # name = name.replace('%20',' ') + "-high.stream"
-                # url = url[0] #(y["streams"]["url"]) 
-                # print('In Videos2 name0 =', name) 
-                # print("In Videos2 url0 =", url) 
-            # else:
-                # if 'low' in quality :
-                    # name = name.replace('%20',' ') + "-low.stream"
-                    # url = url[1] #(y["streams"]["url"]) 
-                    # print('In Videos2 name1 =', name) 
-                    # print("In Videos2 url1 =", url)   
-                    
-            # fin_url = url.replace("\\", "").strip()
-            # print('fin_url: ', fin_url)            
-            
-
-            # self.play_that_shit(str(fin_url))
-        # except Exception as e:
-            # print(str(e))
-            # print("Error: can't find file or read data")
 
     def play_that_shit(self, data):
         desc = self['menulist'].l.getCurrentSelection()[0][0]
@@ -874,8 +819,8 @@ class Playstream2(
 
 def checks():
     from Plugins.Extensions.Filmon.Utils import checkInternet
+    chekin= False    
     checkInternet()
-    chekin= False
     if checkInternet():
         chekin = True
     return chekin
