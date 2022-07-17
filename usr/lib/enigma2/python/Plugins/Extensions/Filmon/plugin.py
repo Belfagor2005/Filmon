@@ -817,22 +817,38 @@ class Playstream2(
     def leavePlayer(self):
         self.close()
 
-def checks():
-    from Plugins.Extensions.Filmon.Utils import checkInternet
-    chekin= False    
-    checkInternet()
-    if checkInternet():
-        chekin = True
-    return chekin
+def intCheck():
+    import socket
+    try:
+        socket.setdefaulttimeout(1)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(("8.8.8.8", 53))
+        return True
+    except:
+        return False
 
 def main(session, **kwargs):
-    if checks:
-        try:
-            from Plugins.Extensions.Filmon.Update import upd_done
-            upd_done()
-        except:
-            pass
-    session.open(filmon)
+    try:
+        if intCheck():
+                from . import Update
+                Update.upd_done()
+                session.open(filmon)
+        else:
+            from Screens.MessageBox import MessageBox
+            from Tools.Notifications import AddPopup
+            AddPopup(_("Sorry but No Internet :("),MessageBox.TYPE_INFO, 10, 'Sorry')  
+    except:
+        import traceback
+        traceback.print_exc() 
+        pass
+
+# def main(session, **kwargs):
+    # if checks:
+        # try:
+            # from Plugins.Extensions.Filmon.Update import upd_done
+            # upd_done()
+        # except:
+            # pass
+    # session.open(filmon)
 
 def Plugins(**kwargs):
     icona = 'plugin.png'
