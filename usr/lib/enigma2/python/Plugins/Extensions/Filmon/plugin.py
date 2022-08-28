@@ -4,7 +4,7 @@
 ****************************************
 *        coded by Lululla & PCD        *
 *             skin by MMark            *
-*             05/06/2022               *
+*             05/08/2022               *
 *       Skin by MMark                  *
 ****************************************
 #--------------------#
@@ -817,18 +817,10 @@ class Playstream2(
     def leavePlayer(self):
         self.close()
 
-def intCheck():
-    import socket
-    try:
-        socket.setdefaulttimeout(1)
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(("8.8.8.8", 53))
-        return True
-    except:
-        return False
 
 def main(session, **kwargs):
     try:
-        if intCheck():
+        if Utils.zCheckInternet(0):
                 from . import Update
                 Update.upd_done()
                 session.open(filmon)
