@@ -118,13 +118,13 @@ title_plug = '..:: Filmon Player ::..'
 desc_plugin = '..:: Live Filmon by Lululla %s ::.. ' % currversion
 global skin_path
 
-if isFHD():
+if Utils.isFHD():
     skin_path= resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_pli/defaultListScreen_new.xml".format('Filmon'))
-    if DreamOS():
+    if Utils.DreamOS():
         skin_path= resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_cvs/defaultListScreen_new.xml".format('Filmon'))
 else:
     skin_path= resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_pli/defaultListScreen.xml".format('Filmon'))
-    if DreamOS():
+    if Utils.DreamOS():
         skin_path= resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_cvs/defaultListScreen.xml".format('Filmon'))
 
 try:
@@ -160,7 +160,7 @@ class m2list(MenuList):
     def __init__(self, list):
         MenuList.__init__(self, list, True, eListboxPythonMultiContent)
 
-        if isFHD():
+        if Utils.isFHD():
             self.l.setItemHeight(50)
             textfont = int(34)
             self.l.setFont(0, gFont('Regular', textfont))
@@ -228,25 +228,25 @@ class filmon(Screen):
     def up(self):
         self[self.currentList].up()
         auswahl = self['menulist'].getCurrent()[0][0]
-        self['name'].setText(auswahl)
+        self['name'].setText(str(auswahl))
         self.load_poster()
 
     def down(self):
         self[self.currentList].down()
         auswahl = self['menulist'].getCurrent()[0][0]
-        self['name'].setText(auswahl)
+        self['name'].setText(str(auswahl))
         self.load_poster()
 
     def left(self):
         self[self.currentList].pageUp()
         auswahl = self['menulist'].getCurrent()[0][0]
-        self['name'].setText(auswahl)
+        self['name'].setText(str(auswahl))
         self.load_poster()
 
     def right(self):
         self[self.currentList].pageDown()
         auswahl = self['menulist'].getCurrent()[0][0]
-        self['name'].setText(auswahl)
+        self['name'].setText(str(auswahl))
         self.load_poster()
 
     def downxmlpage(self):
@@ -282,16 +282,16 @@ class filmon(Screen):
             img = img.replace('\\', '')
             url = "http://www.filmon.com" + url
             pic = ''
-            url = checkStr(url)
-            img = checkStr(img)
-            name = checkStr(name)
+            url = Utils.checkStr(url)
+            img = Utils.checkStr(img)
+            name = Utils.checkStr(name)
             self.cat_list.append(show_(name, url, img, sessionx, pic))
             #def show_(name, link, img, session, description):
         self['menulist'].l.setList(self.cat_list)
         # self['menulist'].l.setItemHeight(50)
         self['menulist'].moveToIndex(0)
         auswahl = self['menulist'].getCurrent()[0][0]
-        self['name'].setText(auswahl)
+        self['name'].setText(str(auswahl))
         self['text'].setText('')
         self.load_poster()
 
@@ -319,8 +319,8 @@ class filmon(Screen):
         channels = re.findall('"id":(.*?),"logo":".*?","big_logo":"(.*?)","title":"(.*?)",.*?description":"(.*?)"', r2)
         for id, img, title, description in channels:
             img = img.replace('\\', '')
-            img = checkStr(img)            
-            id = checkStr(id)
+            img = Utils.checkStr(img)            
+            id = Utils.checkStr(id)
             self.id = id
             title = decodeHtml(title)
             description = decodeHtml(description)
@@ -335,7 +335,7 @@ class filmon(Screen):
         # self['menulist'].l.setItemHeight(50)
         self['menulist'].moveToIndex(0)
         auswahl = self['menulist'].getCurrent()[0][0]
-        self['name'].setText(auswahl)
+        self['name'].setText(str(auswahl))
         self.load_poster()
 
     def get_session(self):
@@ -365,9 +365,9 @@ class filmon(Screen):
                 id = self['menulist'].getCurrent()[0][1]
                 print('iddddd : ', id)
                 session = self['menulist'].getCurrent()[0][3]
-                id = checkStr(id)
+                id = Utils.checkStr(id)
                 urlx = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=rtmp'
-                content = ReadUrl2(urlx)
+                content = Utils.ReadUrl2(urlx)
                 regexvideo = 'session_key":"(.*?)"'
                 match = re.compile(regexvideo,re.DOTALL).findall(content)
                 print("In Filmon2 fpage match =", match)
@@ -386,7 +386,7 @@ class filmon(Screen):
     def get_rtmp(self, data):
         try:
             print('i m here-------')
-            content = ReadUrl2(data)
+            content = Utils.ReadUrl2(data)
             rtmp = re.findall('"quality".*?url"\:"(.*?)"', content)
             if rtmp:
                 fin_url = rtmp[0].replace('\\', '')
@@ -470,7 +470,7 @@ class filmon(Screen):
             self.picload = ePicLoad()
             self.scale = AVSwitch().getFramebufferScale()
             self.picload.setPara([size.width(), size.height(), self.scale[0], self.scale[1], 0, 1, '#00000000'])
-            if DreamOS():
+            if Utils.DreamOS():
                 self.picload.startDecode(png, False)
             else:
                 self.picload.startDecode(png, 0, 0, False)
@@ -820,7 +820,7 @@ class Playstream2(
 
 def main(session, **kwargs):
     try:
-        if Utils.zCheckInternet(0):
+        if Utils.zCheckInternet(1):
                 from . import Update
                 Update.upd_done()
                 session.open(filmon)
