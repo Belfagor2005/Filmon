@@ -4,7 +4,7 @@
 ****************************************
 *        coded by Lululla & PCD        *
 *             skin by MMark            *
-*             05/08/2022               *
+*             05/09/2022               *
 *       Skin by MMark                  *
 ****************************************
 #--------------------#
@@ -77,10 +77,7 @@ import six
 import sys
 import time
 import json
-try:
-    from Plugins.Extensions.Filmon.Utils import *
-except:
-    from . import Utils
+from . import Utils
 global skin_path
 
 PY3 = False
@@ -322,8 +319,8 @@ class filmon(Screen):
             img = Utils.checkStr(img)            
             id = Utils.checkStr(id)
             self.id = id
-            title = decodeHtml(title)
-            description = decodeHtml(description)
+            title = Utils.decodeHtml(title)
+            description = Utils.decodeHtml(description)
             self.cat_list.append(show_(title, id, img, sessionx, description))
             print('name : ', title)
             print('id : ', id)
@@ -632,7 +629,7 @@ class Playstream2(
         service = None
         self.url = url
         # self.pcip = 'None'
-        self.name = decodeHtml(name)
+        self.name = Utils.decodeHtml(name)
         self.state = self.STATE_PLAYING
         self.srefInit = self.session.nav.getCurrentlyPlayingServiceReference()                                  
         # self.onLayoutFinish.append(self.cicleStreamType)
@@ -707,12 +704,12 @@ class Playstream2(
         if os.path.exists(TMDB):
             from Plugins.Extensions.TMBD.plugin import TMBD
             text_clear = self.name
-            text = charRemove(text_clear)
+            text = Utils.charRemove(text_clear)
             self.session.open(TMBD, text, False)
         elif os.path.exists(IMDb):
             from Plugins.Extensions.IMDb.plugin import IMDB
             text_clear = self.name
-            text = charRemove(text_clear)
+            text = Utils.charRemove(text_clear)
             self.session.open(IMDB, text)
         else:
             self.showinfo()
@@ -821,9 +818,9 @@ class Playstream2(
 def main(session, **kwargs):
     try:
         if Utils.zCheckInternet(1):
-                from . import Update
-                Update.upd_done()
-                session.open(filmon)
+            from . import Update
+            Update.upd_done()
+            session.open(filmon)
         else:
             from Screens.MessageBox import MessageBox
             from Tools.Notifications import AddPopup
@@ -832,15 +829,6 @@ def main(session, **kwargs):
         import traceback
         traceback.print_exc() 
         pass
-
-# def main(session, **kwargs):
-    # if checks:
-        # try:
-            # from Plugins.Extensions.Filmon.Update import upd_done
-            # upd_done()
-        # except:
-            # pass
-    # session.open(filmon)
 
 def Plugins(**kwargs):
     icona = 'plugin.png'

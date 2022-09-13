@@ -3,6 +3,7 @@ from twisted.web.client import downloadPage
 PY3 = sys.version_info.major >= 3
 print("Update.py")
 def upd_done():        
+    from twisted.web.client import downloadPage
     print( "In upd_done")
     xfile ='http://patbuweb.com/filmon/filmon.tar'
     print('xfile: ', xfile)
