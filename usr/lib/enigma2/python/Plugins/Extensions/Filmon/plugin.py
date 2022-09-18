@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 '''
 ****************************************
 *        coded by Lululla & PCD        *
@@ -33,8 +34,8 @@ from Screens.Console import Console
 from Screens.InfoBar import InfoBar
 from Screens.InfoBar import MoviePlayer
 from Screens.InfoBarGenerics import InfoBarShowHide, InfoBarSubtitleSupport, InfoBarSummarySupport, \
-	InfoBarNumberZap, InfoBarMenu, InfoBarEPG, InfoBarSeek, InfoBarMoviePlayerSummarySupport, \
-	InfoBarAudioSelection, InfoBarNotifications, InfoBarServiceNotifications
+    InfoBarNumberZap, InfoBarMenu, InfoBarEPG, InfoBarSeek, InfoBarMoviePlayerSummarySupport, \
+    InfoBarAudioSelection, InfoBarNotifications, InfoBarServiceNotifications
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from Screens.Standby import TryQuitMainloop, Standby
@@ -273,7 +274,7 @@ class filmon(Screen):
             n2 = url.find(b'<div id="footer">', n1)
         url = url[n1:n2]
         regexvideo = 'class="group-item".*?a href="(.*?)".*?logo" src="(.*?)".*?title="(.*?)"'
-        #regexvideo = '<li class="group-item".*?a href="(.*?)".*?title="(.*?)"'
+        #  regexvideo = '<li class="group-item".*?a href="(.*?)".*?title="(.*?)"'
         match = re.compile(regexvideo,re.DOTALL).findall(url)
         for url, img, name in match:
             img = img.replace('\\', '')
@@ -283,7 +284,7 @@ class filmon(Screen):
             img = Utils.checkStr(img)
             name = Utils.checkStr(name)
             self.cat_list.append(show_(name, url, img, sessionx, pic))
-            #def show_(name, link, img, session, description):
+            #  def show_(name, link, img, session, description):
         self['menulist'].l.setList(self.cat_list)
         # self['menulist'].l.setItemHeight(50)
         self['menulist'].moveToIndex(0)
@@ -327,7 +328,7 @@ class filmon(Screen):
             print('img : ', img)
             print('sessionx : ', sessionx)            
             print('description : ', description)
-            #def show_(name, link, img, session, description):
+            # def show_(name, link, img, session, description):
         self['menulist'].l.setList(self.cat_list)
         # self['menulist'].l.setItemHeight(50)
         self['menulist'].moveToIndex(0)
