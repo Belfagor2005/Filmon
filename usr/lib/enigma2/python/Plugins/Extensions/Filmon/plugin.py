@@ -15,7 +15,6 @@
 from __future__ import absolute_import
 from Components.AVSwitch import AVSwitch
 from Components.ActionMap import ActionMap
-from Components.Button import Button
 from Components.Label import Label
 from Components.MenuList import MenuList
 from Components.MultiContent import MultiContentEntryText, MultiContentEntryPixmapAlphaTest
@@ -23,12 +22,12 @@ from Components.Pixmap import Pixmap
 from Components.PluginComponent import plugins
 from Components.PluginList import *
 from Components.ScrollLabel import ScrollLabel
-from Components.SelectionList import SelectionList, SelectionEntryComponent
+from Components.SelectionList import SelectionList
 from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
 from Components.Sources.List import List
 from Components.Sources.Source import Source
-from Components.Sources.StaticText import StaticText
 from Components.config import *
+from Components.config import config
 from Plugins.Plugin import PluginDescriptor
 from Screens.Console import Console
 from Screens.InfoBar import InfoBar
@@ -40,74 +39,57 @@ from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from Screens.Standby import TryQuitMainloop, Standby
 from ServiceReference import ServiceReference
-from Tools.BoundFunction import boundFunction
 from Tools.Directories import SCOPE_PLUGINS
 from Tools.Directories import pathExists
 from Tools.Directories import resolveFilename
 from Tools.LoadPixmap import LoadPixmap
 from enigma import *
-from enigma import RT_HALIGN_CENTER, RT_VALIGN_CENTER
-from enigma import RT_HALIGN_LEFT, RT_HALIGN_RIGHT
+from enigma import RT_VALIGN_CENTER
+from enigma import RT_HALIGN_LEFT
 from enigma import eConsoleAppContainer, eListboxPythonMultiContent
 from enigma import eListbox
 from enigma import ePicLoad
 from enigma import eServiceCenter
 from enigma import eServiceReference
-from enigma import eSize
 from enigma import eTimer
 from enigma import gFont
-from enigma import gPixmapPtr
 from enigma import iPlayableService
 from enigma import iServiceInformation
 from enigma import loadPNG
-from enigma import quitMainloop
-from os import path, listdir, remove, mkdir, chmod
-from os.path import exists as file_exists
-from os.path import splitext
-from socket import gaierror, error
-from sys import version_info
-from time import *
-from time import strptime, mktime
+from socket import error
 from twisted.web.client import downloadPage, getPage, error
-import glob
 import hashlib
 import os
 import re
-import shutil
 import six
 import sys
-import time
 import json
 from . import Utils
 global skin_path
 
 PY3 = False
 PY3 = sys.version_info.major >= 3
-print('Py3: ',PY3)
+print('Py3: ', PY3)
 
 try:
-    import http.cookiejar as cookielib
-    from urllib.parse import urlencode
-    from urllib.parse import quote
     from urllib.parse import urlparse
     from urllib.request import Request
     from urllib.request import urlopen
-    PY3 = True; unicode = str; unichr = chr; long = int; xrange = range
+    PY3 = True
+    unicode = str
+    unichr = chr
+    long = int
+    xrange = range
 except:
-    import cookielib
-    from urllib import urlencode
-    from urllib import quote
     from urlparse import urlparse
     from urllib2 import Request
     from urllib2 import urlopen
 
 try:
-    from html.entities import name2codepoint as n2cp
-    from http.client import HTTPConnection, CannotSendRequest, BadStatusLine, HTTPException
+    from http.client import HTTPConnection, CannotSendRequest, HTTPException
 
 except:
-    from htmlentitydefs import name2codepoint as n2cp
-    from httplib import HTTPConnection, CannotSendRequest, BadStatusLine, HTTPException
+    from httplib import HTTPConnection, CannotSendRequest, HTTPException
 
 currversion = '1.6'
 cj = {}
@@ -117,13 +99,13 @@ desc_plugin = '..:: Live Filmon by Lululla %s ::.. ' % currversion
 global skin_path
 
 if Utils.isFHD():
-    skin_path= resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_pli/defaultListScreen_new.xml".format('Filmon'))
+    skin_path = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_pli/defaultListScreen_new.xml".format('Filmon'))
     if Utils.DreamOS():
-        skin_path= resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_cvs/defaultListScreen_new.xml".format('Filmon'))
+        skin_path = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_cvs/defaultListScreen_new.xml".format('Filmon'))
 else:
-    skin_path= resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_pli/defaultListScreen.xml".format('Filmon'))
+    skin_path = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_pli/defaultListScreen.xml".format('Filmon'))
     if Utils.DreamOS():
-        skin_path= resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_cvs/defaultListScreen.xml".format('Filmon'))
+        skin_path = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_cvs/defaultListScreen.xml".format('Filmon'))
 
 try:
     from OpenSSL import SSL
@@ -145,7 +127,7 @@ if sslverify:
             return ctx
 
 global tmp_image
-tmp_image='/tmp/filmon/poster.png'
+tmp_image = '/tmp/filmon/poster.png'
 if not pathExists('/tmp/filmon/'):
     os.system('mkdir /tmp/filmon/')
 else:
@@ -153,6 +135,7 @@ else:
 
 os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.png' + ' /tmp/filmon/poster.png')
 os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.jpg' + ' /tmp/filmon/poster.jpg')
+
 
 class m2list(MenuList):
     def __init__(self, list):
@@ -167,16 +150,18 @@ class m2list(MenuList):
             textfont = int(24)
             self.l.setFont(0, gFont('Regular', textfont))
 
+
 def show_(name, link, img, session, description):
     res = [(name,
-      link,
-      img,
-      session,
-      description)]
+            link,
+            img,
+            session,
+            description)]
     page1 = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/images_new/page_select.png".format('Filmon'))
-    res.append(MultiContentEntryPixmapAlphaTest(pos = (10, 12), size = (34, 25), png = loadPNG(page1)))
+    res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 12), size=(34, 25), png=loadPNG(page1)))
     res.append(MultiContentEntryText(pos=(60, 0), size=(1000, 50), font=0, text=name, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     return res
+
 
 def cat_(letter, link):
     res = [(letter, link)]
@@ -184,7 +169,6 @@ def cat_(letter, link):
     # res.append(MultiContentEntryPixmapAlphaTest(pos = (10, 10), size = (34, 25), png = loadPNG(page2)))
     res.append(MultiContentEntryText(pos=(60, 0), size=(1000, 50), font=0, text=letter, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     return res
-
 
 
 class filmon(Screen):
@@ -212,15 +196,15 @@ class filmon(Screen):
         # self.count = 0
         # self.loading = 0
         self['actions'] = ActionMap(['OkCancelActions',
-         'ColorActions',
-         'DirectionActions',
-         'MovieSelectionActions'], {'up': self.up,
-         'down': self.down,
-         'left': self.left,
-         'right': self.right,
-         'ok': self.ok,
-         'cancel': self.exit,
-         'red': self.exit}, -1)
+                                     'ColorActions',
+                                     'DirectionActions',
+                                     'MovieSelectionActions'], {'up': self.up,
+                                     'down': self.down,
+                                     'left': self.left,
+                                     'right': self.right,
+                                     'ok': self.ok,
+                                     'cancel': self.exit,
+                                     'red': self.exit}, -1)
         self.onLayoutFinish.append(self.downxmlpage)
 
     def up(self):
@@ -262,7 +246,7 @@ class filmon(Screen):
         self.cat_list = []
         global sessionx
         sessionx = self.get_session()
-        url= data
+        url = data
         if PY3:
             url = six.ensure_str(url)
         print("content 3 =", url)
@@ -275,7 +259,7 @@ class filmon(Screen):
         url = url[n1:n2]
         regexvideo = 'class="group-item".*?a href="(.*?)".*?logo" src="(.*?)".*?title="(.*?)"'
         #  regexvideo = '<li class="group-item".*?a href="(.*?)".*?title="(.*?)"'
-        match = re.compile(regexvideo,re.DOTALL).findall(url)
+        match = re.compile(regexvideo, re.DOTALL).findall(url)
         for url, img, name in match:
             img = img.replace('\\', '')
             url = "http://www.filmon.com" + url
@@ -293,7 +277,7 @@ class filmon(Screen):
         self['text'].setText('')
         self.load_poster()
 
-    def cat(self,url):
+    def cat(self, url):
         self.index = 'cat'
         self.cat_list = []
         self.id = ''
@@ -317,7 +301,7 @@ class filmon(Screen):
         channels = re.findall('"id":(.*?),"logo":".*?","big_logo":"(.*?)","title":"(.*?)",.*?description":"(.*?)"', r2)
         for id, img, title, description in channels:
             img = img.replace('\\', '')
-            img = Utils.checkStr(img)            
+            img = Utils.checkStr(img)
             id = Utils.checkStr(id)
             self.id = id
             title = Utils.decodeHtml(title)
@@ -326,7 +310,7 @@ class filmon(Screen):
             print('name : ', title)
             print('id : ', id)
             print('img : ', img)
-            print('sessionx : ', sessionx)            
+            print('sessionx : ', sessionx)
             print('description : ', description)
             # def show_(name, link, img, session, description):
         self['menulist'].l.setList(self.cat_list)
@@ -341,15 +325,15 @@ class filmon(Screen):
         req = Request(urlx)
         req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')
         req.add_header('Referer', 'https://www.filmon.com/')
-        req.add_header('X-Requested-With', 'XMLHttpRequest')            
+        req.add_header('X-Requested-With', 'XMLHttpRequest')
         page = urlopen(req, None, 15)
-        content = page.read() #.decode('utf-8')
+        content = page.read()  #.decode('utf-8')
         if PY3:
-            content = six.ensure_str(content) 
+            content = six.ensure_str(content)
         print('content: ', content)
-        x = json.loads(content)   
+        x = json.loads(content)
         session = ''
-        session = x["session_key"] 
+        session = x["session_key"]
         if session:
             print('session O ', str(session))
             return str(session)
@@ -367,7 +351,7 @@ class filmon(Screen):
                 urlx = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=rtmp'
                 content = Utils.ReadUrl2(urlx)
                 regexvideo = 'session_key":"(.*?)"'
-                match = re.compile(regexvideo,re.DOTALL).findall(content)
+                match = re.compile(regexvideo, re.DOTALL).findall(content)
                 print("In Filmon2 fpage match =", match)
                 url = 'https://www.filmon.com/api-v2/channel/' + id + "?session_key=" + session
                 self.get_rtmp(url)
@@ -402,7 +386,7 @@ class filmon(Screen):
 
     def exit(self):
         if self.index == 'group':
-            deletetmp()
+            Utils.deletetmp()
             self.close()
         elif self.index == 'cat':
             self.downxmlpage()
@@ -418,7 +402,7 @@ class filmon(Screen):
         pixmaps = self['menulist'].getCurrent()[0][2]
         tmp_image = jpg_store = '/tmp/filmon/poster.png'
 
-        if pixmaps != "" or pixmaps != "n/A" or pixmaps != None or pixmaps != "null" :
+        if pixmaps != "" or pixmaps != "n/A" or pixmaps is not None or pixmaps != "null":
             if pixmaps.find('http') == -1:
                 self.poster_resize(tmp_image)
                 return
@@ -440,8 +424,8 @@ class filmon(Screen):
                 except Exception as ex:
                     print(ex)
                     print("Error: can't find file or read data")
-            return                    
-                    
+            return
+
     def downloadPic(self, data, pictmp):
         if os.path.exists(pictmp):
             try:
@@ -454,7 +438,7 @@ class filmon(Screen):
 
     def downloadError(self, png):
         try:
-            if fileExists(png):
+            if os.path.exists(png):
                 self.poster_resize(tmp_image)
         except Exception as ex:
             self.poster_resize(tmp_image)
@@ -473,12 +457,13 @@ class filmon(Screen):
             else:
                 self.picload.startDecode(png, 0, 0, False)
             ptr = self.picload.getData()
-            if ptr != None:
+            if ptr is not None:
                 self['poster'].instance.setPixmap(ptr)
                 self['poster'].show()
             else:
                 print('no cover.. error')
             return
+
 
 class TvInfoBarShowHide():
     """ InfoBar show/hide control, accepts toggleShow and hide actions, might start
@@ -490,8 +475,7 @@ class TvInfoBarShowHide():
     skipToggleShow = False
 
     def __init__(self):
-        self["ShowHideActions"] = ActionMap(["InfobarShowHideActions"], {"toggleShow": self.OkPressed,
-         "hide": self.hide}, 0)
+        self["ShowHideActions"] = ActionMap(["InfobarShowHideActions"], {"toggleShow": self.OkPressed, "hide": self.hide}, 0)
         self.__event_tracker = ServiceEventTracker(screen=self, eventmap={iPlayableService.evStart: self.serviceStarted})
         self.__state = self.STATE_SHOWN
         self.__locked = 0
@@ -546,6 +530,7 @@ class TvInfoBarShowHide():
         self.hideTimer.stop()
         if self.__state == self.STATE_SHOWN:
             self.hide()
+
     def lockShow(self):
         try:
             self.__locked += 1
@@ -566,11 +551,10 @@ class TvInfoBarShowHide():
         if self.execing:
             self.startHideTimer()
 
-    def debug(obj, text = ""):
+    def debug(obj, text=""):
         print(text + " %s\n" % obj)
 
 
-        
 class Playstream2(
     InfoBarBase,
     InfoBarMenu,
@@ -610,21 +594,21 @@ class Playstream2(
             self.init_aspect = 0
         self.new_aspect = self.init_aspect
         self['actions'] = ActionMap(['MoviePlayerActions',
-         'MovieSelectionActions',
-         'MediaPlayerActions',
-         'EPGSelectActions',
-         'MediaPlayerSeekActions',
-         'SetupActions',
-         'ColorActions',
-         'InfobarShowHideActions',
-         'InfobarActions',
-         'InfobarSeekActions'], {'stop': self.cancel,
-         'epg': self.showIMDB,
-         # 'info': self.showinfo,
-         'info': self.cicleStreamType,
-         'tv': self.cicleStreamType,
-         # 'stop': self.leavePlayer,
-         'cancel': self.cancel}, -1)
+                                     'MovieSelectionActions',
+                                     'MediaPlayerActions',
+                                     'EPGSelectActions',
+                                     'MediaPlayerSeekActions',
+                                     'SetupActions',
+                                     'ColorActions',
+                                     'InfobarShowHideActions',
+                                     'InfobarActions',
+                                     'InfobarSeekActions'], {'stop': self.cancel,
+                                     'epg': self.showIMDB,
+                                     # 'info': self.showinfo,
+                                     'info': self.cicleStreamType,
+                                     'tv': self.cicleStreamType,
+                                     # 'stop': self.leavePlayer,
+                                     'cancel': self.cancel}, -1)
         # self.allowPiP = False
         self.service = None
         service = None
@@ -632,7 +616,7 @@ class Playstream2(
         # self.pcip = 'None'
         self.name = Utils.decodeHtml(name)
         self.state = self.STATE_PLAYING
-        self.srefInit = self.session.nav.getCurrentlyPlayingServiceReference()                                  
+        self.srefInit = self.session.nav.getCurrentlyPlayingServiceReference()
         # self.onLayoutFinish.append(self.cicleStreamType)
         if '8088' in str(self.url):
             # self.onLayoutFinish.append(self.slinkPlay)
@@ -646,22 +630,22 @@ class Playstream2(
         return AVSwitch().getAspectRatioSetting()
 
     def getAspectString(self, aspectnum):
-        return {0: _('4:3 Letterbox'),
-         1: _('4:3 PanScan'),
-         2: _('16:9'),
-         3: _('16:9 always'),
-         4: _('16:10 Letterbox'),
-         5: _('16:10 PanScan'),
-         6: _('16:9 Letterbox')}[aspectnum]
+        return {0: '4:3 Letterbox',
+                1: '4:3 PanScan',
+                2: '16:9',
+                3: '16:9 always',
+                4: '16:10 Letterbox',
+                5: '16:10 PanScan',
+                6: '16:9 Letterbox'}[aspectnum]
 
     def setAspect(self, aspect):
         map = {0: '4_3_letterbox',
-         1: '4_3_panscan',
-         2: '16_9',
-         3: '16_9_always',
-         4: '16_10_letterbox',
-         5: '16_10_panscan',
-         6: '16_9_letterbox'}
+               1: '4_3_panscan',
+               2: '16_9',
+               3: '16_9_always',
+               4: '16_10_letterbox',
+               5: '16_10_panscan',
+               6: '16_9_letterbox'}
         config.av.aspectratio.setValue(map[aspect])
         try:
             AVSwitch().setAspectRatio(aspect)
@@ -681,11 +665,11 @@ class Playstream2(
         sServiceref = ''
         try:
             servicename, serviceurl = getserviceinfo(sref)
-            if servicename != None:
+            if servicename is not None:
                 sTitle = servicename
             else:
                 sTitle = ''
-            if serviceurl != None:
+            if serviceurl is not None:
                 sServiceref = serviceurl
             else:
                 sServiceref = ''
@@ -728,7 +712,7 @@ class Playstream2(
         name = self.name
         ref = "{0}:0:0:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3A"), name.replace(":", "%3A"))
         print('reference:   ', ref)
-        if streaml == True:
+        if streaml is True:
             url = 'http://127.0.0.1:8088/' + str(url)
             ref = "{0}:0:1:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3A"), name.replace(":", "%3A"))
             print('streaml reference:   ', ref)
@@ -791,7 +775,7 @@ class Playstream2(
     def showVideoInfo(self):
         if self.shown:
             self.hideInfobar()
-        if self.infoCallback != None:
+        if self.infoCallback is not None:
             self.infoCallback()
         return
 
@@ -825,11 +809,12 @@ def main(session, **kwargs):
         else:
             from Screens.MessageBox import MessageBox
             from Tools.Notifications import AddPopup
-            AddPopup(_("Sorry but No Internet :("),MessageBox.TYPE_INFO, 10, 'Sorry')  
+            AddPopup(_("Sorry but No Internet :("), MessageBox.TYPE_INFO, 10, 'Sorry')
     except:
         import traceback
-        traceback.print_exc() 
+        traceback.print_exc()
         pass
+
 
 def Plugins(**kwargs):
     icona = 'plugin.png'
