@@ -22,34 +22,24 @@ from Components.Pixmap import Pixmap
 from Components.PluginComponent import plugins
 from Components.PluginList import *
 from Components.ScrollLabel import ScrollLabel
-from Components.SelectionList import SelectionList
 from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
 from Components.Sources.List import List
 from Components.Sources.Source import Source
-from Components.config import *
 from Components.config import config
 from Plugins.Plugin import PluginDescriptor
-from Screens.Console import Console
-from Screens.InfoBar import InfoBar
 from Screens.InfoBar import MoviePlayer
-from Screens.InfoBarGenerics import InfoBarShowHide, InfoBarSubtitleSupport, InfoBarSummarySupport, \
-    InfoBarNumberZap, InfoBarMenu, InfoBarEPG, InfoBarSeek, InfoBarMoviePlayerSummarySupport, \
-    InfoBarAudioSelection, InfoBarNotifications, InfoBarServiceNotifications
+from Screens.InfoBarGenerics import InfoBarShowHide, InfoBarMenu, InfoBarSeek, InfoBarAudioSelection, InfoBarNotifications
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
-from Screens.Standby import TryQuitMainloop, Standby
 from ServiceReference import ServiceReference
 from Tools.Directories import SCOPE_PLUGINS
 from Tools.Directories import pathExists
 from Tools.Directories import resolveFilename
-from Tools.LoadPixmap import LoadPixmap
-from enigma import *
 from enigma import RT_VALIGN_CENTER
 from enigma import RT_HALIGN_LEFT
-from enigma import eConsoleAppContainer, eListboxPythonMultiContent
+from enigma import eListboxPythonMultiContent
 from enigma import eListbox
 from enigma import ePicLoad
-from enigma import eServiceCenter
 from enigma import eServiceReference
 from enigma import eTimer
 from enigma import gFont
@@ -57,8 +47,7 @@ from enigma import iPlayableService
 from enigma import iServiceInformation
 from enigma import loadPNG
 from socket import error
-from twisted.web.client import downloadPage, getPage, error
-import hashlib
+from twisted.web.client import downloadPage, getPage
 import os
 import re
 import six
@@ -84,12 +73,6 @@ except:
     from urlparse import urlparse
     from urllib2 import Request
     from urllib2 import urlopen
-
-try:
-    from http.client import HTTPConnection, CannotSendRequest, HTTPException
-
-except:
-    from httplib import HTTPConnection, CannotSendRequest, HTTPException
 
 currversion = '1.6'
 cj = {}
@@ -237,8 +220,7 @@ class filmon(Screen):
             url = b'http://www.filmon.com/group'
         getPage(url).addCallback(self._gotPageLoad).addErrback(self.errorLoad)
 
-    def errorLoad(self, error):
-        print(str(error))
+    def errorLoad(self):
         self['name'].setText(_('Try again later ...'))
 
     def _gotPageLoad(self, data):
@@ -327,7 +309,7 @@ class filmon(Screen):
         req.add_header('Referer', 'https://www.filmon.com/')
         req.add_header('X-Requested-With', 'XMLHttpRequest')
         page = urlopen(req, None, 15)
-        content = page.read()  #.decode('utf-8')
+        content = page.read()  # .decode('utf-8')
         if PY3:
             content = six.ensure_str(content)
         print('content: ', content)
@@ -343,7 +325,7 @@ class filmon(Screen):
     def ok(self):
         try:
             if self.index == 'cat':
-                name = self['menulist'].getCurrent()[0][0]
+                # name = self['menulist'].getCurrent()[0][0]
                 id = self['menulist'].getCurrent()[0][1]
                 print('iddddd : ', id)
                 session = self['menulist'].getCurrent()[0][3]
@@ -400,7 +382,7 @@ class filmon(Screen):
         else:
             self['text'].setText('')
         pixmaps = self['menulist'].getCurrent()[0][2]
-        tmp_image = jpg_store = '/tmp/filmon/poster.png'
+        tmp_image = '/tmp/filmon/poster.png'
 
         if pixmaps != "" or pixmaps != "n/A" or pixmaps is not None or pixmaps != "null":
             if pixmaps.find('http') == -1:
@@ -578,9 +560,7 @@ class Playstream2(
         _session = session
         self.session = session
         self.skinName = 'MoviePlayer'
-        title = name
         streaml = False
-
         for x in InfoBarBase, \
                 InfoBarMenu, \
                 InfoBarSeek, \
@@ -611,7 +591,6 @@ class Playstream2(
                                      'cancel': self.cancel}, -1)
         # self.allowPiP = False
         self.service = None
-        service = None
         self.url = url
         # self.pcip = 'None'
         self.name = Utils.decodeHtml(name)
@@ -661,10 +640,13 @@ class Playstream2(
         self.setAspect(temp)
 
     def showinfo(self):
+        sref = self.srefInit
+        p = ServiceReference(sref)
+        servicename = str(p.getServiceName())
+        serviceurl = str(p.getPath())
         sTitle = ''
         sServiceref = ''
         try:
-            servicename, serviceurl = getserviceinfo(sref)
             if servicename is not None:
                 sTitle = servicename
             else:
@@ -793,7 +775,7 @@ class Playstream2(
                 self.setAspect(self.init_aspect)
             except:
                 pass
-        streaml = False
+        # streaml = False
         self.close()
 
     def leavePlayer(self):
