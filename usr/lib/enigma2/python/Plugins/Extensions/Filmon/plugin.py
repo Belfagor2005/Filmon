@@ -5,7 +5,7 @@
 ****************************************
 *        coded by Lululla & PCD        *
 *             skin by MMark            *
-*             05/09/2022               *
+*             25/09/2022               *
 *       Skin by MMark                  *
 ****************************************
 #--------------------#
@@ -20,33 +20,27 @@ from Components.MenuList import MenuList
 from Components.MultiContent import MultiContentEntryText, MultiContentEntryPixmapAlphaTest
 from Components.Pixmap import Pixmap
 from Components.PluginComponent import plugins
-from Components.PluginList import *
-from Components.ScrollLabel import ScrollLabel
 from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
 from Components.Sources.List import List
 from Components.Sources.Source import Source
 from Components.config import config
 from Plugins.Plugin import PluginDescriptor
 from Screens.InfoBar import MoviePlayer
-from Screens.InfoBarGenerics import InfoBarShowHide, InfoBarMenu, InfoBarSeek, InfoBarAudioSelection, InfoBarNotifications
+from Screens.InfoBarGenerics import InfoBarMenu, InfoBarSeek, InfoBarAudioSelection, InfoBarNotifications
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
-from ServiceReference import ServiceReference
 from Tools.Directories import SCOPE_PLUGINS
 from Tools.Directories import pathExists
 from Tools.Directories import resolveFilename
 from enigma import RT_VALIGN_CENTER
 from enigma import RT_HALIGN_LEFT
 from enigma import eListboxPythonMultiContent
-from enigma import eListbox
 from enigma import ePicLoad
 from enigma import eServiceReference
 from enigma import eTimer
 from enigma import gFont
 from enigma import iPlayableService
-from enigma import iServiceInformation
 from enigma import loadPNG
-from socket import error
 from twisted.web.client import downloadPage, getPage
 import os
 import re
@@ -148,8 +142,6 @@ def show_(name, link, img, session, description):
 
 def cat_(letter, link):
     res = [(letter, link)]
-    # page2 = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/images_new/page_select.png".format('Filmon'))
-    # res.append(MultiContentEntryPixmapAlphaTest(pos = (10, 10), size = (34, 25), png = loadPNG(page2)))
     res.append(MultiContentEntryText(pos=(60, 0), size=(1000, 50), font=0, text=letter, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     return res
 
@@ -182,12 +174,12 @@ class filmon(Screen):
                                      'ColorActions',
                                      'DirectionActions',
                                      'MovieSelectionActions'], {'up': self.up,
-                                     'down': self.down,
-                                     'left': self.left,
-                                     'right': self.right,
-                                     'ok': self.ok,
-                                     'cancel': self.exit,
-                                     'red': self.exit}, -1)
+                                                                'down': self.down,
+                                                                'left': self.left,
+                                                                'right': self.right,
+                                                                'ok': self.ok,
+                                                                'cancel': self.exit,
+                                                                'red': self.exit}, -1)
         self.onLayoutFinish.append(self.downxmlpage)
 
     def up(self):
@@ -269,7 +261,6 @@ class filmon(Screen):
         req.add_header('X-Requested-With', 'XMLHttpRequest')
         page = urlopen(req)
         r = page.read()
-        # r = getUrl2(url, "http://www.filmon.com")
         if PY3:
             r = six.ensure_str(r)
         print("content 3 =", r)
@@ -349,7 +340,6 @@ class filmon(Screen):
 
     def get_rtmp(self, data):
         try:
-            print('i m here-------')
             content = Utils.ReadUrl2(data)
             rtmp = re.findall('"quality".*?url"\:"(.*?)"', content)
             if rtmp:
@@ -583,16 +573,14 @@ class Playstream2(
                                      'InfobarShowHideActions',
                                      'InfobarActions',
                                      'InfobarSeekActions'], {'stop': self.cancel,
-                                     'epg': self.showIMDB,
-                                     # 'info': self.showinfo,
-                                     'info': self.cicleStreamType,
-                                     'tv': self.cicleStreamType,
-                                     # 'stop': self.leavePlayer,
-                                     'cancel': self.cancel}, -1)
-        # self.allowPiP = False
+                                                             'epg': self.showIMDB,
+                                                             'info': self.showIMDB,
+                                                             # 'info': self.cicleStreamType,
+                                                             'tv': self.cicleStreamType,
+                                                             # 'stop': self.leavePlayer,
+                                                             'cancel': self.cancel}, -1)
         self.service = None
         self.url = url
-        # self.pcip = 'None'
         self.name = Utils.decodeHtml(name)
         self.state = self.STATE_PLAYING
         self.srefInit = self.session.nav.getCurrentlyPlayingServiceReference()
@@ -639,47 +627,32 @@ class Playstream2(
         self.new_aspect = temp
         self.setAspect(temp)
 
-    def showinfo(self):
-        sref = self.srefInit
-        p = ServiceReference(sref)
-        servicename = str(p.getServiceName())
-        serviceurl = str(p.getPath())
-        sTitle = ''
-        sServiceref = ''
-        try:
-            if servicename is not None:
-                sTitle = servicename
-            else:
-                sTitle = ''
-            if serviceurl is not None:
-                sServiceref = serviceurl
-            else:
-                sServiceref = ''
-            currPlay = self.session.nav.getCurrentService()
-            sTagCodec = currPlay.info().getInfoString(iServiceInformation.sTagCodec)
-            sTagVideoCodec = currPlay.info().getInfoString(iServiceInformation.sTagVideoCodec)
-            sTagAudioCodec = currPlay.info().getInfoString(iServiceInformation.sTagAudioCodec)
-            message = 'stitle:' + str(sTitle) + '\n' + 'sServiceref:' + str(sServiceref) + '\n' + 'sTagCodec:' + str(sTagCodec) + '\n' + 'sTagVideoCodec:' + str(sTagVideoCodec) + '\n' + 'sTagAudioCodec : ' + str(sTagAudioCodec)
-            self.mbox = self.session.open(MessageBox, message, MessageBox.TYPE_INFO)
-        except:
-            pass
-        return
-
     def showIMDB(self):
-        TMDB = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('TMDB'))
-        IMDb = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('IMDb'))
-        if os.path.exists(TMDB):
-            from Plugins.Extensions.TMBD.plugin import TMBD
-            text_clear = self.name
-            text = Utils.charRemove(text_clear)
-            self.session.open(TMBD, text, False)
-        elif os.path.exists(IMDb):
-            from Plugins.Extensions.IMDb.plugin import IMDB
-            text_clear = self.name
-            text = Utils.charRemove(text_clear)
-            self.session.open(IMDB, text)
+        i = len(self.names)
+        print('iiiiii= ', i)
+        if i < 1:
+            return
+        idx = self['list'].getSelectionIndex()
+        text_clear = self.names[idx]
+        if Utils.is_tmdb:
+            try:
+                from Plugins.Extensions.TMBD.plugin import TMBD
+                text = Utils.badcar(text_clear)
+                text = Utils.charRemove(text_clear)
+                _session.open(TMBD.tmdbScreen, text, 0)
+            except Exception as ex:
+                print("[XCF] Tmdb: ", str(ex))
+        elif Utils.is_imdb:
+            try:
+                from Plugins.Extensions.IMDb.plugin import main as imdb
+                text = Utils.badcar(text_clear)
+                text = Utils.charRemove(text_clear)
+                imdb(_session, text)
+                # _session.open(imdb, text)
+            except Exception as ex:
+                print("[XCF] imdb: ", str(ex))
         else:
-            self.showinfo()
+            self.session.open(MessageBox, text_clear, MessageBox.TYPE_INFO)
 
     def slinkPlay(self, url):
         name = self.name
@@ -704,16 +677,11 @@ class Playstream2(
         self.session.nav.stopService()
         self.session.nav.playService(sref)
 
-        # url =  url.replace(":", "%3a")
-        # self.reference = eServiceReference(int(self.servicetype), 0, url)
-        # self.reference.setName(name)
-        # self.session.nav.playService(self.reference)
-
     def cicleStreamType(self):
         global streaml
         streaml = False
         from itertools import cycle, islice
-        self.servicetype = '4097'
+        # self.servicetype = '4097'
         print('servicetype1: ', self.servicetype)
         url = str(self.url)
         if str(os.path.splitext(self.url)[-1]) == ".m3u8":
