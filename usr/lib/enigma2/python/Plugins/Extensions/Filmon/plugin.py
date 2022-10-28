@@ -17,16 +17,18 @@ from Components.AVSwitch import AVSwitch
 from Components.ActionMap import ActionMap
 from Components.Label import Label
 from Components.MenuList import MenuList
-from Components.MultiContent import MultiContentEntryText, MultiContentEntryPixmapAlphaTest
+from Components.MultiContent import MultiContentEntryText
+from Components.MultiContent import MultiContentEntryPixmapAlphaTest
 from Components.Pixmap import Pixmap
-from Components.PluginComponent import plugins
+# from Components.PluginComponent import plugins
 from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
-from Components.Sources.List import List
-from Components.Sources.Source import Source
+# from Components.Sources.List import List
+# from Components.Sources.Source import Source
 from Components.config import config
 from Plugins.Plugin import PluginDescriptor
 from Screens.InfoBar import MoviePlayer
-from Screens.InfoBarGenerics import InfoBarMenu, InfoBarSeek, InfoBarAudioSelection, InfoBarNotifications
+from Screens.InfoBarGenerics import InfoBarMenu, InfoBarSeek
+from Screens.InfoBarGenerics import InfoBarAudioSelection, InfoBarNotifications
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from Tools.Directories import SCOPE_PLUGINS
@@ -681,7 +683,7 @@ class Playstream2(
         global streaml
         streaml = False
         from itertools import cycle, islice
-        # self.servicetype = '4097'
+        self.servicetype = '4097'
         print('servicetype1: ', self.servicetype)
         url = str(self.url)
         if str(os.path.splitext(self.url)[-1]) == ".m3u8":
@@ -753,8 +755,11 @@ class Playstream2(
 def main(session, **kwargs):
     try:
         if Utils.zCheckInternet(1):
-            from . import Update
-            Update.upd_done()
+            try:
+                from . import Update
+                Update.upd_done()
+            except Exception as e:
+                print('error import ' , str(e))
             session.open(filmon)
         else:
             from Screens.MessageBox import MessageBox
