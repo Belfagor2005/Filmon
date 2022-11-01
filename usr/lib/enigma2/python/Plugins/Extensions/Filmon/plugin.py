@@ -530,14 +530,14 @@ class TvInfoBarShowHide():
 
 
 class Playstream2(
-    InfoBarBase,
-    InfoBarMenu,
-    InfoBarSeek,
-    InfoBarAudioSelection,
-    InfoBarNotifications,
-    TvInfoBarShowHide,
-    Screen
-):
+                  InfoBarBase,
+                  InfoBarMenu,
+                  InfoBarSeek,
+                  InfoBarAudioSelection,
+                  InfoBarNotifications,
+                  TvInfoBarShowHide,
+                  Screen
+                  ):
     STATE_IDLE = 0
     STATE_PLAYING = 1
     STATE_PAUSED = 2
@@ -773,7 +773,7 @@ def main(session, **kwargs):
 
 def Plugins(**kwargs):
     icona = 'plugin.png'
-    extDescriptor = PluginDescriptor(name=title_plug, description=desc_plugin, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=icona, fnc=main)
+    extDescriptor = PluginDescriptor(name='Filmon Player', description=desc_plugin, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=icona, fnc=main)
     result = [PluginDescriptor(name=title_plug, description=desc_plugin, where=[PluginDescriptor.WHERE_PLUGINMENU], icon=icona, fnc=main)]
     result.append(extDescriptor)
     return result
