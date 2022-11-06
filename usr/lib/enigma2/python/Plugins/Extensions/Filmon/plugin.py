@@ -73,8 +73,9 @@ except:
 currversion = '1.6'
 cj = {}
 PLUGIN_PATH = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('Filmon'))
-title_plug = '..:: Filmon Player ::..'
+title_plug = 'Filmon Player'
 desc_plugin = '..:: Live Filmon by Lululla %s ::.. ' % currversion
+_firstStartfo = True
 global skin_path
 
 if Utils.isFHD():
@@ -148,6 +149,32 @@ def cat_(letter, link):
     return res
 
 
+def returnIMDB(text_clear):
+    TMDB = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('TMDB'))
+    IMDb = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('IMDb'))
+    if TMDB:
+        try:
+            from Plugins.Extensions.TMBD.plugin import TMBD
+            text = decodeHtml(text_clear)
+            _session.open(TMBD.tmdbScreen, text, 0)
+        except Exception as ex:
+            print("[XCF] Tmdb: ", str(ex))
+        return True
+    elif IMDb:
+        try:
+            from Plugins.Extensions.IMDb.plugin import main as imdb
+            text = decodeHtml(text_clear)
+            imdb(_session, text)
+        except Exception as ex:
+            print("[XCF] imdb: ", str(ex))
+        return True
+    else:
+        text_clear = decodeHtml(text_clear)
+        _session.open(MessageBox, text_clear, MessageBox.TYPE_INFO)
+        return True
+    return
+
+
 class filmon(Screen):
     def __init__(self, session):
         self.session = session
@@ -155,6 +182,8 @@ class filmon(Screen):
         with open(skin, 'r') as f:
             self.skin = f.read()
         Screen.__init__(self, session)
+        global _session
+        _session = session
         self.menulist = []
         self.setTitle(title_plug)
         self['menulist'] = m2list([])
@@ -630,31 +659,9 @@ class Playstream2(
         self.setAspect(temp)
 
     def showIMDB(self):
-        i = len(self.names)
-        print('iiiiii= ', i)
-        if i < 1:
-            return
-        idx = self['list'].getSelectionIndex()
-        text_clear = self.names[idx]
-        if Utils.is_tmdb:
-            try:
-                from Plugins.Extensions.TMBD.plugin import TMBD
-                text = Utils.badcar(text_clear)
-                text = Utils.charRemove(text_clear)
-                _session.open(TMBD.tmdbScreen, text, 0)
-            except Exception as ex:
-                print("[XCF] Tmdb: ", str(ex))
-        elif Utils.is_imdb:
-            try:
-                from Plugins.Extensions.IMDb.plugin import main as imdb
-                text = Utils.badcar(text_clear)
-                text = Utils.charRemove(text_clear)
-                imdb(_session, text)
-                # _session.open(imdb, text)
-            except Exception as ex:
-                print("[XCF] imdb: ", str(ex))
-        else:
-            self.session.open(MessageBox, text_clear, MessageBox.TYPE_INFO)
+        text_clear = self.name
+        if returnIMDB(text_clear):
+            print('show imdb/tmdb')
 
     def slinkPlay(self, url):
         name = self.name
@@ -752,19 +759,48 @@ class Playstream2(
         self.close()
 
 
+class AutoStartTimerFon:
+
+    def __init__(self, session):
+        self.session = session
+        global _firstStartfo
+        print("*** running AutoStartTimerFon ***")
+        if _firstStartfo:
+            self.runUpdate()
+
+    def runUpdate(self):
+        print("*** running update ***")
+        try:
+            from . import Update
+            Update.upd_done()
+            _firstStartfo = False
+        except Exception as e:
+            print('error Fxy', str(e))
+
+def autostart(reason, session=None, **kwargs):
+    print("*** running autostart ***")
+    global autoStartTimerFon
+    global _firstStartfo
+    if reason == 0:
+        if session is not None:
+            _firstStartfo = True
+            autoStartTimerFon = AutoStartTimerFon(session)
+    return
+
+
 def main(session, **kwargs):
     try:
-        if Utils.zCheckInternet(1):
-            try:
-                from . import Update
-                Update.upd_done()
-            except Exception as e:
-                print('error import ' , str(e))
-            session.open(filmon)
-        else:
-            from Screens.MessageBox import MessageBox
-            from Tools.Notifications import AddPopup
-            AddPopup(_("Sorry but No Internet :("), MessageBox.TYPE_INFO, 10, 'Sorry')
+        # if Utils.zCheckInternet(1):
+            # try:
+                # from . import Update
+                # Update.upd_done()
+            # except Exception as e:
+                # print('error import ' , str(e))
+        session.open(filmon)
+        # else:
+            # from Screens.MessageBox import MessageBox
+            # from Tools.Notifications import AddPopup
+            # AddPopup(_("Sorry but No Internet :("), MessageBox.TYPE_INFO, 10, 'Sorry')
     except:
         import traceback
         traceback.print_exc()
@@ -774,6 +810,8 @@ def main(session, **kwargs):
 def Plugins(**kwargs):
     icona = 'plugin.png'
     extDescriptor = PluginDescriptor(name='Filmon Player', description=desc_plugin, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=icona, fnc=main)
-    result = [PluginDescriptor(name=title_plug, description=desc_plugin, where=[PluginDescriptor.WHERE_PLUGINMENU], icon=icona, fnc=main)]
+    # result = [PluginDescriptor(name=title_plug, description=desc_plugin, where=[PluginDescriptor.WHERE_PLUGINMENU], icon=icona, fnc=main)]
+    result = [PluginDescriptor(name=title_plug, description=desc_plugin, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
+              PluginDescriptor(name=title_plug, description=desc_plugin, where=PluginDescriptor.WHERE_PLUGINMENU, icon=icona, fnc=main)]    
     result.append(extDescriptor)
     return result
