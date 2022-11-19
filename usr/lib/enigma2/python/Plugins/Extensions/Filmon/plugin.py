@@ -599,7 +599,6 @@ class Playstream2(
                                      'MediaPlayerActions',
                                      'EPGSelectActions',
                                      'MediaPlayerSeekActions',
-                                     'SetupActions',
                                      'ColorActions',
                                      'InfobarShowHideActions',
                                      'InfobarActions',
