@@ -20,10 +20,7 @@ from Components.MenuList import MenuList
 from Components.MultiContent import MultiContentEntryText
 from Components.MultiContent import MultiContentEntryPixmapAlphaTest
 from Components.Pixmap import Pixmap
-# from Components.PluginComponent import plugins
 from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
-# from Components.Sources.List import List
-# from Components.Sources.Source import Source
 from Components.config import config
 from Plugins.Plugin import PluginDescriptor
 from Screens.InfoBar import MoviePlayer
@@ -50,6 +47,7 @@ import six
 import sys
 import json
 from . import Utils
+from . import html_conv
 global skin_path
 
 PY3 = False
@@ -155,7 +153,7 @@ def returnIMDB(text_clear):
     if TMDB:
         try:
             from Plugins.Extensions.TMBD.plugin import TMBD
-            text = Utils.decodeHtml(text_clear)
+            text = html_conv.html_unescape(text_clear)
             _session.open(TMBD.tmdbScreen, text, 0)
         except Exception as ex:
             print("[XCF] Tmdb: ", str(ex))
@@ -163,13 +161,13 @@ def returnIMDB(text_clear):
     elif IMDb:
         try:
             from Plugins.Extensions.IMDb.plugin import main as imdb
-            text = Utils.decodeHtml(text_clear)
+            text = html_conv.html_unescape(text_clear)
             imdb(_session, text)
         except Exception as ex:
             print("[XCF] imdb: ", str(ex))
         return True
     else:
-        text_clear = Utils.decodeHtml(text_clear)
+        text_clear = html_conv.html_unescape(text_clear)
         _session.open(MessageBox, text_clear, MessageBox.TYPE_INFO)
         return True
     return
@@ -204,6 +202,7 @@ class filmon(Screen):
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions',
                                      'DirectionActions',
+                                     'ButtonSetupActions',
                                      'MovieSelectionActions'], {'up': self.up,
                                                                 'down': self.down,
                                                                 'left': self.left,
@@ -308,8 +307,8 @@ class filmon(Screen):
             img = Utils.checkStr(img)
             id = Utils.checkStr(id)
             self.id = id
-            title = Utils.decodeHtml(title)
-            description = Utils.decodeHtml(description)
+            title = html_conv.html_unescape(title)
+            description = html_conv.html_unescape(description)
             self.cat_list.append(show_(title, id, img, sessionx, description))
             print('name : ', title)
             print('id : ', id)
@@ -600,6 +599,7 @@ class Playstream2(
                                      'EPGSelectActions',
                                      'MediaPlayerSeekActions',
                                      'ColorActions',
+                                     'ButtonSetupActions',
                                      'InfobarShowHideActions',
                                      'InfobarActions',
                                      'InfobarSeekActions'], {'stop': self.cancel,
@@ -611,7 +611,7 @@ class Playstream2(
                                                              'cancel': self.cancel}, -1)
         self.service = None
         self.url = url
-        self.name = Utils.decodeHtml(name)
+        self.name = html_conv.html_unescape(name)
         self.state = self.STATE_PLAYING
         self.srefInit = self.session.nav.getCurrentlyPlayingServiceReference()
         # self.onLayoutFinish.append(self.cicleStreamType)
@@ -800,7 +800,6 @@ def main(session, **kwargs):
 def Plugins(**kwargs):
     icona = 'plugin.png'
     extDescriptor = PluginDescriptor(name='Filmon Player', description=desc_plugin, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=icona, fnc=main)
-    # result = [PluginDescriptor(name=title_plug, description=desc_plugin, where=[PluginDescriptor.WHERE_PLUGINMENU], icon=icona, fnc=main)]
     result = [PluginDescriptor(name=title_plug, description=desc_plugin, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
               PluginDescriptor(name=title_plug, description=desc_plugin, where=PluginDescriptor.WHERE_PLUGINMENU, icon=icona, fnc=main)]
     result.append(extDescriptor)
