@@ -35,4 +35,5 @@ def upd_last(fplug):
         cmd = "tar -xvf /tmp/filmon.tar -C /"
         print("cmd A =", cmd)
         os.system(cmd)
+        os.remove('/tmp/filmon.tar')
     return
