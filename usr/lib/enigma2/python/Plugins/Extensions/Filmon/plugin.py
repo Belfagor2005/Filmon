@@ -59,10 +59,10 @@ try:
     from urllib.request import Request
     from urllib.request import urlopen
     PY3 = True
-    unicode = str
-    unichr = chr
-    long = int
-    xrange = range
+    # unicode = str
+    # unichr = chr
+    # long = int
+    # xrange = range
 except:
     from urlparse import urlparse
     from urllib2 import Request
@@ -121,14 +121,14 @@ class m2list(MenuList):
 
         if Utils.isFHD():
             self.l.setItemHeight(50)
-            textfont = int(34)
+            textfont = int(30)
             self.l.setFont(0, gFont('Regular', textfont))
         else:
-            self.l.setItemHeight(50)
+            self.l.setItemHeight(30)
             textfont = int(24)
             self.l.setFont(0, gFont('Regular', textfont))
 
-
+    
 def show_(name, link, img, session, description):
     res = [(name,
             link,
@@ -136,14 +136,14 @@ def show_(name, link, img, session, description):
             session,
             description)]
     page1 = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/images_new/page_select.png".format('Filmon'))
-    res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 12), size=(34, 25), png=loadPNG(page1)))
-    res.append(MultiContentEntryText(pos=(60, 0), size=(1000, 50), font=0, text=name, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
+    res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(40, 40), png=loadPNG(page1)))
+    res.append(MultiContentEntryText(pos=(50, 0), size=(1000, 50), font=0, text=name, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     return res
 
 
 def cat_(letter, link):
     res = [(letter, link)]
-    res.append(MultiContentEntryText(pos=(60, 0), size=(1000, 50), font=0, text=letter, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
+    res.append(MultiContentEntryText(pos=(50, 0), size=(1000, 50), font=0, text=letter, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     return res
 
 
@@ -600,6 +600,7 @@ class Playstream2(
                                      'MediaPlayerSeekActions',
                                      'ColorActions',
                                      'ButtonSetupActions',
+                                     'OkCancelActions',
                                      'InfobarShowHideActions',
                                      'InfobarActions',
                                      'InfobarSeekActions'], {'stop': self.cancel,
@@ -607,6 +608,8 @@ class Playstream2(
                                                              'info': self.showIMDB,
                                                              # 'info': self.cicleStreamType,
                                                              'tv': self.cicleStreamType,
+                                                             'leavePlayer': self.cancel,
+                                                             'back': self.leavePlayer,
                                                              # 'stop': self.leavePlayer,
                                                              'cancel': self.cancel}, -1)
         self.service = None
