@@ -5,7 +5,7 @@
 ****************************************
 *        coded by Lululla & PCD        *
 *             skin by MMark            *
-*             25/09/2022               *
+*             14/01/2023               *
 *       Skin by MMark                  *
 ****************************************
 #--------------------#
@@ -59,10 +59,6 @@ try:
     from urllib.request import Request
     from urllib.request import urlopen
     PY3 = True
-    # unicode = str
-    # unichr = chr
-    # long = int
-    # xrange = range
 except:
     from urlparse import urlparse
     from urllib2 import Request
@@ -86,7 +82,7 @@ else:
         skin_path = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_cvs/defaultListScreen.xml".format('Filmon'))
 
 try:
-    from OpenSSL import SSL
+    # from OpenSSL import SSL
     from twisted.internet import ssl
     from twisted.internet._sslverify import ClientTLSOptions
     sslverify = True
@@ -141,10 +137,10 @@ def show_(name, link, img, session, description):
     return res
 
 
-def cat_(letter, link):
-    res = [(letter, link)]
-    res.append(MultiContentEntryText(pos=(50, 0), size=(1000, 50), font=0, text=letter, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
-    return res
+# def cat_(letter, link):
+    # res = [(letter, link)]
+    # res.append(MultiContentEntryText(pos=(50, 0), size=(1000, 50), font=0, text=letter, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
+    # return res
 
 
 def returnIMDB(text_clear):
@@ -187,7 +183,6 @@ class filmon(Screen):
         self['menulist'] = m2list([])
         self['red'] = Label(_('Exit'))
         # self['title'] = Label('')
-        # self['title'].setText(title_plug)
         self['name'] = Label('Loading data... Please wait')
         self['text'] = Label('')
         self['poster'] = Pixmap()
@@ -196,9 +191,6 @@ class filmon(Screen):
         self.dnfile = 'False'
         self.currentList = 'menulist'
         self.loading_ok = False
-        # self.check = 'abc'
-        # self.count = 0
-        # self.loading = 0
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions',
                                      'DirectionActions',
@@ -272,9 +264,7 @@ class filmon(Screen):
             img = Utils.checkStr(img)
             name = Utils.checkStr(name)
             self.cat_list.append(show_(name, url, img, sessionx, pic))
-            #  def show_(name, link, img, session, description):
         self['menulist'].l.setList(self.cat_list)
-        # self['menulist'].l.setItemHeight(50)
         self['menulist'].moveToIndex(0)
         auswahl = self['menulist'].getCurrent()[0][0]
         self['name'].setText(str(auswahl))
@@ -310,14 +300,7 @@ class filmon(Screen):
             title = html_conv.html_unescape(title)
             description = html_conv.html_unescape(description)
             self.cat_list.append(show_(title, id, img, sessionx, description))
-            print('name : ', title)
-            print('id : ', id)
-            print('img : ', img)
-            print('sessionx : ', sessionx)
-            print('description : ', description)
-            # def show_(name, link, img, session, description):
         self['menulist'].l.setList(self.cat_list)
-        # self['menulist'].l.setItemHeight(50)
         self['menulist'].moveToIndex(0)
         auswahl = self['menulist'].getCurrent()[0][0]
         self['name'].setText(str(auswahl))
@@ -330,7 +313,7 @@ class filmon(Screen):
         req.add_header('Referer', 'https://www.filmon.com/')
         req.add_header('X-Requested-With', 'XMLHttpRequest')
         page = urlopen(req, None, 15)
-        content = page.read()  # .decode('utf-8')
+        content = page.read()
         if PY3:
             content = six.ensure_str(content)
         print('content: ', content)
@@ -346,7 +329,6 @@ class filmon(Screen):
     def ok(self):
         try:
             if self.index == 'cat':
-                # name = self['menulist'].getCurrent()[0][0]
                 id = self['menulist'].getCurrent()[0][1]
                 print('iddddd : ', id)
                 session = self['menulist'].getCurrent()[0][3]
@@ -698,8 +680,8 @@ class Playstream2(
         if str(os.path.splitext(self.url)[-1]) == ".m3u8":
             if self.servicetype == "1":
                 self.servicetype = "4097"
-        # currentindex = 0
-        # streamtypelist = ["4097"]
+        currentindex = 0
+        streamtypelist = ["4097"]
         # # if "youtube" in str(self.url):
             # # self.mbox = self.session.open(MessageBox, _('For Stream Youtube coming soon!'), MessageBox.TYPE_INFO, timeout=5)
             # # return
@@ -710,14 +692,14 @@ class Playstream2(
             # streamtypelist.append("5001")
         # if os.path.exists("/usr/bin/exteplayer3"):
             # streamtypelist.append("5002")
-        # if os.path.exists("/usr/bin/apt-get"):
-            # streamtypelist.append("8193")
+        if os.path.exists("/usr/bin/apt-get"):
+            streamtypelist.append("8193")
         # for index, item in enumerate(streamtypelist, start=0):
             # if str(item) == str(self.servicetype):
                 # currentindex = index
                 # break
-        # nextStreamType = islice(cycle(streamtypelist), currentindex + 1, None)
-        # self.servicetype = str(next(nextStreamType))
+        nextStreamType = islice(cycle(streamtypelist), currentindex + 1, None)
+        self.servicetype = str(next(nextStreamType))
         print('servicetype2: ', self.servicetype)
         self.openTest(self.servicetype, url)
 
