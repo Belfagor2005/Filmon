@@ -31,7 +31,7 @@ def upd_last(fplug):
     import os
     import time
     time.sleep(5)
-    if os.path.isfile('/tmp/filmon.tar') and os.stat('/tmp/filmon.tar').st_size > 10000:
+    if os.path.exists('/tmp/filmon.tar') and os.stat('/tmp/filmon.tar').st_size > 100:
         cmd = "tar -xvf /tmp/filmon.tar -C /"
         print("cmd A =", cmd)
         os.system(cmd)

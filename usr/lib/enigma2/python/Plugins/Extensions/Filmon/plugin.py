@@ -64,12 +64,13 @@ except:
     from urllib2 import Request
     from urllib2 import urlopen
 
-currversion = '1.6'
+currversion = '1.7'
 cj = {}
 PLUGIN_PATH = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('Filmon'))
 title_plug = 'Filmon Player'
 desc_plugin = '..:: Live Filmon by Lululla %s ::.. ' % currversion
 _firstStartfo = True
+
 global skin_path
 
 if Utils.isFHD():
@@ -135,12 +136,6 @@ def show_(name, link, img, session, description):
     res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(40, 40), png=loadPNG(page1)))
     res.append(MultiContentEntryText(pos=(50, 0), size=(1000, 50), font=0, text=name, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     return res
-
-
-# def cat_(letter, link):
-    # res = [(letter, link)]
-    # res.append(MultiContentEntryText(pos=(50, 0), size=(1000, 50), font=0, text=letter, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
-    # return res
 
 
 def returnIMDB(text_clear):
@@ -333,8 +328,9 @@ class filmon(Screen):
                 print('iddddd : ', id)
                 session = self['menulist'].getCurrent()[0][3]
                 id = Utils.checkStr(id)
+                referer = 'http://www.filmon.com'            
                 urlx = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=rtmp'
-                content = Utils.ReadUrl2(urlx)
+                content = Utils.ReadUrl2(urlx, referer)
                 regexvideo = 'session_key":"(.*?)"'
                 match = re.compile(regexvideo, re.DOTALL).findall(content)
                 print("In Filmon2 fpage match =", match)
@@ -352,7 +348,8 @@ class filmon(Screen):
 
     def get_rtmp(self, data):
         try:
-            content = Utils.ReadUrl2(data)
+            referer = 'http://www.filmon.com'
+            content = Utils.ReadUrl2(data, referer)
             rtmp = re.findall('"quality".*?url"\:"(.*?)"', content)
             if rtmp:
                 fin_url = rtmp[0].replace('\\', '')
@@ -394,13 +391,12 @@ class filmon(Screen):
                 try:
                     if PY3:
                         pixmaps = six.ensure_binary(pixmaps)
-                    # print("debug: pixmaps:",pixmaps)
-                    # print("debug: pixmaps:",type(pixmaps))
+
                     if pixmaps.startswith(b"https") and sslverify:
                         parsed_uri = urlparse(pixmaps)
                         domain = parsed_uri.hostname
                         sniFactory = SNIFactory(domain)
-                        # if six.PY3:
+                        # if PY3:
                             # pixmaps = pixmaps.encode()
                         downloadPage(pixmaps, tmp_image, sniFactory, timeout=5).addCallback(self.downloadPic, tmp_image).addErrback(self.downloadError)
                     else:
@@ -682,22 +678,24 @@ class Playstream2(
                 self.servicetype = "4097"
         currentindex = 0
         streamtypelist = ["4097"]
-        # # if "youtube" in str(self.url):
-            # # self.mbox = self.session.open(MessageBox, _('For Stream Youtube coming soon!'), MessageBox.TYPE_INFO, timeout=5)
-            # # return
-        # if isStreamlinkAvailable():
-            # streamtypelist.append("5002")
-            # streaml = True
-        # if os.path.exists("/usr/bin/gstplayer"):
-            # streamtypelist.append("5001")
-        # if os.path.exists("/usr/bin/exteplayer3"):
-            # streamtypelist.append("5002")
+        '''
+        if "youtube" in str(self.url):
+            self.mbox = self.session.open(MessageBox, _('For Stream Youtube coming soon!'), MessageBox.TYPE_INFO, timeout=5)
+            return
+        if isStreamlinkAvailable():
+            streamtypelist.append("5002")
+            streaml = True
+        if os.path.exists("/usr/bin/gstplayer"):
+            streamtypelist.append("5001")
+        if os.path.exists("/usr/bin/exteplayer3"):
+            streamtypelist.append("5002")
+        '''
         if os.path.exists("/usr/bin/apt-get"):
             streamtypelist.append("8193")
-        # for index, item in enumerate(streamtypelist, start=0):
-            # if str(item) == str(self.servicetype):
-                # currentindex = index
-                # break
+        for index, item in enumerate(streamtypelist, start=0):
+            if str(item) == str(self.servicetype):
+                currentindex = index
+                break
         nextStreamType = islice(cycle(streamtypelist), currentindex + 1, None)
         self.servicetype = str(next(nextStreamType))
         print('servicetype2: ', self.servicetype)
