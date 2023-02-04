@@ -74,13 +74,13 @@ _firstStartfo = True
 global skin_path
 
 if Utils.isFHD():
-    skin_path = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_pli/defaultListScreen_new.xml".format('Filmon'))
+    skin_path = os.path.join(PLUGIN_PATH, 'skin/skin_pli/defaultListScreen_new.xml')
     if Utils.DreamOS():
-        skin_path = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_cvs/defaultListScreen_new.xml".format('Filmon'))
+        skin_path = os.path.join(PLUGIN_PATH, 'skin/skin_cvs/defaultListScreen_new.xml')
 else:
-    skin_path = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_pli/defaultListScreen.xml".format('Filmon'))
+    skin_path = os.path.join(PLUGIN_PATH, 'skin/skin_pli/defaultListScreen.xml')
     if Utils.DreamOS():
-        skin_path = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/skin_cvs/defaultListScreen.xml".format('Filmon'))
+        skin_path = os.path.join(PLUGIN_PATH, 'skin/skin_cvs/defaultListScreen.xml')
 
 try:
     # from OpenSSL import SSL
@@ -108,8 +108,8 @@ if not pathExists('/tmp/filmon/'):
 else:
     print('/tmp/filmon/ allready present')
 
-os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.png' + ' /tmp/filmon/poster.png')
-os.system("cd / && cp -f " + PLUGIN_PATH+'/noposter.jpg' + ' /tmp/filmon/poster.jpg')
+os.system("cd / && cp -f " + PLUGIN_PATH + '/noposter.png' + ' /tmp/filmon/poster.png')
+os.system("cd / && cp -f " + PLUGIN_PATH + '/noposter.jpg' + ' /tmp/filmon/poster.jpg')
 
 
 class m2list(MenuList):
@@ -121,7 +121,7 @@ class m2list(MenuList):
             textfont = int(30)
             self.l.setFont(0, gFont('Regular', textfont))
         else:
-            self.l.setItemHeight(30)
+            self.l.setItemHeight(50)
             textfont = int(24)
             self.l.setFont(0, gFont('Regular', textfont))
 
@@ -132,7 +132,7 @@ def show_(name, link, img, session, description):
             img,
             session,
             description)]
-    page1 = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/skin/images_new/page_select.png".format('Filmon'))
+    page1 = os.path.join(PLUGIN_PATH, 'skin/images_new/page_select.png')
     res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(40, 40), png=loadPNG(page1)))
     res.append(MultiContentEntryText(pos=(50, 0), size=(1000, 50), font=0, text=name, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     return res
@@ -608,22 +608,26 @@ class Playstream2(
         return AVSwitch().getAspectRatioSetting()
 
     def getAspectString(self, aspectnum):
-        return {0: '4:3 Letterbox',
-                1: '4:3 PanScan',
-                2: '16:9',
-                3: '16:9 always',
-                4: '16:10 Letterbox',
-                5: '16:10 PanScan',
-                6: '16:9 Letterbox'}[aspectnum]
+        return {
+            0: '4:3 Letterbox',
+            1: '4:3 PanScan',
+            2: '16:9',
+            3: '16:9 always',
+            4: '16:10 Letterbox',
+            5: '16:10 PanScan',
+            6: '16:9 Letterbox'
+        }[aspectnum]
 
     def setAspect(self, aspect):
-        map = {0: '4_3_letterbox',
-               1: '4_3_panscan',
-               2: '16_9',
-               3: '16_9_always',
-               4: '16_10_letterbox',
-               5: '16_10_panscan',
-               6: '16_9_letterbox'}
+        map = {
+            0: '4_3_letterbox',
+            1: '4_3_panscan',
+            2: '16_9',
+            3: '16_9_always',
+            4: '16_10_letterbox',
+            5: '16_10_panscan',
+            6: '16_9_letterbox'
+        }
         config.av.aspectratio.setValue(map[aspect])
         try:
             AVSwitch().setAspectRatio(aspect)
