@@ -657,7 +657,7 @@ class Playstream2(
 
     def openTest(self, servicetype, url):
         name = self.name
-        ref = "{0}:0:0:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3A"), name.replace(":", "%3A"))
+        ref = "{0}:0:1:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3A"), name.replace(":", "%3A"))
         print('reference:   ', ref)
         if streaml is True:
             url = 'http://127.0.0.1:8088/' + str(url)
