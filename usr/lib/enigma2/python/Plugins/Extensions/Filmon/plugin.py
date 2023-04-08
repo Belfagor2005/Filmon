@@ -11,8 +11,8 @@
 #--------------------#
 #Info http://t.me/tivustream
 '''
-# from __future__ import print_function
-from __future__ import absolute_import
+from __future__ import print_function
+# from __future__ import absolute_import
 from Components.AVSwitch import AVSwitch
 from Components.ActionMap import ActionMap
 from Components.Label import Label
@@ -23,7 +23,6 @@ from Components.Pixmap import Pixmap
 from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
 from Components.config import config
 from Plugins.Plugin import PluginDescriptor
-from Screens.InfoBar import MoviePlayer
 from Screens.InfoBarGenerics import InfoBarMenu, InfoBarSeek
 from Screens.InfoBarGenerics import InfoBarAudioSelection, InfoBarNotifications
 from Screens.MessageBox import MessageBox
@@ -46,9 +45,13 @@ import re
 import six
 import sys
 import json
+import ssl
+import requests
+import urllib3
 from . import Utils
 from . import html_conv
 global skin_path
+
 
 PY3 = False
 PY3 = sys.version_info.major >= 3
@@ -82,6 +85,14 @@ else:
     if Utils.DreamOS():
         skin_path = os.path.join(PLUGIN_PATH, 'skin/skin_cvs/defaultListScreen.xml')
 
+
+if sys.version_info >= (2, 7, 9):
+    try:
+        import ssl
+        sslContext = ssl._create_unverified_context()
+    except:
+        sslContext = None
+
 try:
     # from OpenSSL import SSL
     from twisted.internet import ssl
@@ -101,6 +112,17 @@ if sslverify:
                 ClientTLSOptions(self.hostname, ctx)
             return ctx
 
+
+class SslOldHttpAdapter(requests.adapters.HTTPAdapter):
+    def init_poolmanager(self, connections, maxsize, block=False):
+        ctx = ssl.create_default_context()
+        ctx.set_ciphers('DEFAULT@SECLEVEL=1')
+
+        self.poolmanager = urllib3.poolmanager.PoolManager(
+            ssl_version=ssl.PROTOCOL_TLS,
+            ssl_context=ctx)
+
+
 global tmp_image
 tmp_image = '/tmp/filmon/poster.png'
 if not pathExists('/tmp/filmon/'):
@@ -113,15 +135,15 @@ os.system("cd / && cp -f " + PLUGIN_PATH + '/noposter.jpg' + ' /tmp/filmon/poste
 
 
 class m2list(MenuList):
+
     def __init__(self, list):
         MenuList.__init__(self, list, True, eListboxPythonMultiContent)
-
         if Utils.isFHD():
-            self.l.setItemHeight(50)
+            self.l.setItemHeight(60)
             textfont = int(30)
             self.l.setFont(0, gFont('Regular', textfont))
         else:
-            self.l.setItemHeight(50)
+            self.l.setItemHeight(35)
             textfont = int(24)
             self.l.setFont(0, gFont('Regular', textfont))
 
@@ -132,9 +154,16 @@ def show_(name, link, img, session, description):
             img,
             session,
             description)]
-    page1 = os.path.join(PLUGIN_PATH, 'skin/images_new/page_select.png')
-    res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(40, 40), png=loadPNG(page1)))
-    res.append(MultiContentEntryText(pos=(50, 0), size=(1000, 50), font=0, text=name, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
+    page1 = os.path.join(PLUGIN_PATH, 'skin/images_new/50x50.png')
+    # res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(50, 50), png=loadPNG(page1)))
+    # res.append(MultiContentEntryText(pos=(60, 0), size=(1000, 50), font=0, text=name, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
+
+    if Utils.isFHD():
+        res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(50, 50), png=loadPNG(page1)))
+        res.append(MultiContentEntryText(pos=(90, 0), size=(1000, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
+    else:
+        res.append(MultiContentEntryPixmapAlphaTest(pos=(3, 3), size=(40, 40), png=loadPNG(page1)))
+        res.append(MultiContentEntryText(pos=(70, 0), size=(500, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     return res
 
 
@@ -271,7 +300,7 @@ class filmon(Screen):
         self.id = ''
         req = Request(url)
         req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')
-        req.add_header('Referer', 'https://www.filmon.com/')
+        req.add_header('Referer', 'http://www.filmon.com/')
         req.add_header('X-Requested-With', 'XMLHttpRequest')
         page = urlopen(req)
         r = page.read()
@@ -304,7 +333,7 @@ class filmon(Screen):
         urlx = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=rtmp'
         req = Request(urlx)
         req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')
-        req.add_header('Referer', 'https://www.filmon.com/')
+        req.add_header('Referer', 'http://www.filmon.com/')
         req.add_header('X-Requested-With', 'XMLHttpRequest')
         page = urlopen(req, None, 15)
         content = page.read()
@@ -326,14 +355,14 @@ class filmon(Screen):
                 id = self['menulist'].getCurrent()[0][1]
                 print('iddddd : ', id)
                 session = self['menulist'].getCurrent()[0][3]
-                id = Utils.checkStr(id)
-                referer = 'http://www.filmon.com'            
+                # id = Utils.checkStr(id)
+                referer = 'http://www.filmon.com'
                 urlx = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=rtmp'
                 content = Utils.ReadUrl2(urlx, referer)
                 regexvideo = 'session_key":"(.*?)"'
                 match = re.compile(regexvideo, re.DOTALL).findall(content)
                 print("In Filmon2 fpage match =", match)
-                url = 'https://www.filmon.com/api-v2/channel/' + id + "?session_key=" + session
+                url = 'http://www.filmon.com/api-v2/channel/' + str(id) + "?session_key=" + session
                 self.get_rtmp(url)
             elif self.index == 'group':
                 url = self['menulist'].getCurrent()[0][1]
@@ -343,20 +372,34 @@ class filmon(Screen):
                 self.cat(url)
         except Exception as e:
             print(str(e))
-            print("Error: can't find file or read data")
+            print("Error: can't find file")
 
     def get_rtmp(self, data):
         try:
+            # import requests
+            from urllib3.exceptions import InsecureRequestWarning
+            from urllib3 import disable_warnings 
+            disable_warnings(InsecureRequestWarning)
+
             referer = 'http://www.filmon.com'
-            content = Utils.ReadUrl2(data, referer)
+            from . import client
+            headers = {'User-Agent': client.agent(), 'Referer': referer}
+            content = six.ensure_str(client.request(data, headers=headers))
+
+            # referer = 'http://www.filmon.com'
+            # content = Utils.ReadUrl2(data, referer)
+            # # content = Utils.ReadUrl2(data)
+            # print('contet: ', content)
+
             rtmp = re.findall('"quality".*?url"\:"(.*?)"', content)
+            # print('rtmp: ', rtmp)
             if rtmp:
                 fin_url = rtmp[0].replace('\\', '')
                 print('fin_url: ', fin_url)
                 self.play_that_shit(str(fin_url))
         except Exception as ex:
             print(ex)
-            print("Error: can't find file or read data")
+            print("Error: can't read data")
 
     def play_that_shit(self, data):
         desc = self['menulist'].l.getCurrentSelection()[0][0]
@@ -601,6 +644,8 @@ class Playstream2(
         else:
             # self.onLayoutFinish.append(self.cicleStreamType)
             self.onFirstExecBegin.append(self.cicleStreamType)
+
+        # self.onFirstExecBegin.append(self.openYtdl)    
         self.onClose.append(self.cancel)
 
     def getAspect(self):
@@ -635,7 +680,7 @@ class Playstream2(
 
     def av(self):
         temp = int(self.getAspect())
-        temp = temp + 1
+        temp += 1
         if temp > 6:
             temp = 0
         self.new_aspect = temp
@@ -646,26 +691,43 @@ class Playstream2(
         if returnIMDB(text_clear):
             print('show imdb/tmdb')
 
-    def slinkPlay(self, url):
+    def openYtdl(self):
         name = self.name
-        ref = "{0}:{1}".format(url.replace(":", "%3A"), name.replace(":", "%3A"))
-        print('final reference:   ', ref)
+        url = 'streamlink%3a//' + self.url
+        servicetype = '4097'
+        ref = "{0}:0:1:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3a"), name.replace(":", "%3a"))
+        print('reference youtube:   ', ref)
         sref = eServiceReference(ref)
         sref.setName(name)
         self.session.nav.stopService()
         self.session.nav.playService(sref)
 
+    def slinkPlay(self, url):
+        ref = str(url)
+        ref = ref.replace(':', '%3a').replace(' ', '%20')
+        print('final reference 1:   ', ref)
+        ref = "{0}:{1}".format(ref, self.name)
+        sref = eServiceReference(ref)
+        sref.setName(self.name)
+        self.session.nav.stopService()
+        self.session.nav.playService(sref)
+
     def openTest(self, servicetype, url):
-        name = self.name
-        ref = "{0}:0:1:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3A"), name.replace(":", "%3A"))
-        print('reference:   ', ref)
+        url = url.replace(':', '%3a').replace(' ', '%20')
+        ref = str(servicetype) + ':0:1:0:0:0:0:0:0:0:' + str(url)  # + ':' + self.name
+
         if streaml is True:
-            url = 'http://127.0.0.1:8088/' + str(url)
-            ref = "{0}:0:1:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3A"), name.replace(":", "%3A"))
-            print('streaml reference:   ', ref)
+            ref = str(servicetype) + ':0:1:0:0:0:0:0:0:0:http%3a//127.0.0.1%3a8088/' + str(url) + ':' + self.name
+        # name = self.name
+        # ref = "{0}:0:1:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3A"), name.replace(":", "%3A"))
+        # print('reference:   ', ref)
+        # if streaml is True:
+            # url = 'http://127.0.0.1:8088/' + str(url)
+            # ref = "{0}:0:1:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3A"), name.replace(":", "%3A"))
+            # print('streaml reference:   ', ref)
         print('final reference:   ', ref)
         sref = eServiceReference(ref)
-        sref.setName(name)
+        sref.setName(self.name)
         self.session.nav.stopService()
         self.session.nav.playService(sref)
 
@@ -728,7 +790,7 @@ class Playstream2(
             self.doShow()
 
     def cancel(self):
-        if os.path.isfile('/tmp/hls.avi'):
+        if os.path.exists('/tmp/hls.avi'):
             os.remove('/tmp/hls.avi')
         self.session.nav.stopService()
         self.session.nav.playService(self.srefInit)

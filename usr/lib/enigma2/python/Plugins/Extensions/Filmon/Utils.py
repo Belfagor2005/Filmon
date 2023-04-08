@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# 15.02.2023
+# 30.03.2023
 # a common tips used from Lululla
 #
 import sys
@@ -302,7 +302,11 @@ def downloadFile(url, target):
         response = urlopen(url, None, 5)
         with open(target, 'wb') as output:
             # print('response: ', response)
-            output.write(response.read())
+            if PY3:
+                output.write(response.read().decode('utf-8'))
+            else:
+                output.write(response.read())
+            # output.write(response.read())
         response.close()
         return True
     except HTTPError:
@@ -447,7 +451,7 @@ def checkRedirect(url):
     # print("*** check redirect ***")
     import requests
     from requests.adapters import HTTPAdapter
-    hdr = {"User-Agent": "Enigma2 - XCForever Plugin"}
+    hdr = {"User-Agent": "Enigma2 - Enigma2 Plugin"}
     x = ""
     adapter = HTTPAdapter()
     http = requests.Session()
@@ -459,6 +463,62 @@ def checkRedirect(url):
     except Exception as e:
         print(e)
         return str(url)
+
+
+
+
+
+def checkRedirect2(url):
+    # print("*** check redirect ***")
+    import requests
+    from requests.adapters import HTTPAdapter
+    # hdr = {"User-Agent": "Enigma2 - Enigma2 Plugin"}
+    # x = ""
+    # adapter = HTTPAdapter()
+    # http = requests.Session()
+    # http.mount("http://", adapter)
+    # http.mount("https://", adapter)
+    # try:
+        # x = http.get(url, headers=hdr, timeout=15, verify=False, stream=True)
+        # return str(x.url)
+    # except Exception as e:
+        # print(e)
+        # return str(url)
+    import ssl
+    from urllib3 import poolmanager
+    # class TLSAdapter(requests.adapters.HTTPAdapter):
+    
+
+        # def init_poolmanager(self, connections, maxsize, block=False):
+            # """Create and initialize the urllib3 PoolManager."""
+            # ctx = ssl.create_default_context()
+            # ctx.set_ciphers('DEFAULT@SECLEVEL=1')
+            # self.poolmanager = poolmanager.PoolManager(
+                    # num_pools=connections,
+                    # maxsize=maxsize,
+                    # block=block,
+                    # ssl_version=ssl.PROTOCOL_TLS,
+                    # ssl_context=ctx)
+
+    # session = requests.session()
+    # session.mount('https://', TLSAdapter())
+    # res = session.get(url)
+    # return res
+
+    class TLSAdapter(requests.adapters.HTTPAdapter):
+
+        def init_poolmanager(self, *args, **kwargs):
+            ctx = ssl.create_default_context()
+            ctx.set_ciphers('DEFAULT@SECLEVEL=1')
+            kwargs['ssl_context'] = ctx
+            return super(TLSAdapter, self).init_poolmanager(*args, **kwargs)
+
+    session = requests.session()
+    session.mount('https://', TLSAdapter())
+    res = session.get(url)
+    print('TLSAdapter: ', res)
+    return res
+
 
 
 def freespace():
