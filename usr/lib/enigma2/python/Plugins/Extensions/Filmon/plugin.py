@@ -13,7 +13,6 @@
 '''
 from __future__ import print_function
 # from __future__ import absolute_import
-from Components.AVSwitch import AVSwitch
 from Components.ActionMap import ActionMap
 from Components.Label import Label
 from Components.MenuList import MenuList
@@ -67,7 +66,7 @@ except:
     from urllib2 import Request
     from urllib2 import urlopen
 
-currversion = '1.7'
+currversion = '1.8'
 cj = {}
 PLUGIN_PATH = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('Filmon'))
 title_plug = 'Filmon Player'
@@ -155,9 +154,6 @@ def show_(name, link, img, session, description):
             session,
             description)]
     page1 = os.path.join(PLUGIN_PATH, 'skin/images_new/50x50.png')
-    # res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(50, 50), png=loadPNG(page1)))
-    # res.append(MultiContentEntryText(pos=(60, 0), size=(1000, 50), font=0, text=name, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
-
     if Utils.isFHD():
         res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(50, 50), png=loadPNG(page1)))
         res.append(MultiContentEntryText(pos=(90, 0), size=(1000, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
@@ -385,11 +381,6 @@ class filmon(Screen):
             from . import client
             headers = {'User-Agent': client.agent(), 'Referer': referer}
             content = six.ensure_str(client.request(data, headers=headers))
-
-            # referer = 'http://www.filmon.com'
-            # content = Utils.ReadUrl2(data, referer)
-            # # content = Utils.ReadUrl2(data)
-            # print('contet: ', content)
 
             rtmp = re.findall('"quality".*?url"\:"(.*?)"', content)
             # print('rtmp: ', rtmp)
@@ -718,13 +709,7 @@ class Playstream2(
 
         if streaml is True:
             ref = str(servicetype) + ':0:1:0:0:0:0:0:0:0:http%3a//127.0.0.1%3a8088/' + str(url) + ':' + self.name
-        # name = self.name
-        # ref = "{0}:0:1:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3A"), name.replace(":", "%3A"))
-        # print('reference:   ', ref)
-        # if streaml is True:
-            # url = 'http://127.0.0.1:8088/' + str(url)
-            # ref = "{0}:0:1:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3A"), name.replace(":", "%3A"))
-            # print('streaml reference:   ', ref)
+
         print('final reference:   ', ref)
         sref = eServiceReference(ref)
         sref.setName(self.name)

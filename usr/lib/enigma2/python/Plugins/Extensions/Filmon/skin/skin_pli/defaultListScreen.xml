@@ -1,12 +1,11 @@
 <screen name="filmon" position="0,0" size="1280,720" backgroundColor="#30000000" flags="wfNoBorder">
-  <widget name="name" position="21,89" size="642,40" noWrap="1" zPosition="1" transparent="1" font="Regular; 22" valign="center" halign="left" backgroundColor="#30000000" foregroundColor="#00ffffff" />
-  <widget name="menulist" position="21,141" size="810,358" backgroundColor="#30000000" zPosition="1" scrollbarMode="showOnDemand" transparent="1" foregroundColor="#00ffffff" />
+  <widget name="name" position="21,89" size="807,40" noWrap="1" zPosition="1" transparent="1" font="Regular; 22" valign="center" halign="left" backgroundColor="#30000000" foregroundColor="#00ffffff" />
+  <widget name="menulist" position="22,141" size="810,358" backgroundColor="#30000000" zPosition="1" scrollbarMode="showOnDemand" transparent="1" foregroundColor="#00ffffff" />
   <widget name="text" position="21,506" size="810,138" zPosition="1" backgroundColor="#30000000" transparent="1" font="Regular; 22" halign="center" foregroundColor="#f4b700" />
-  <widget name="poster" position="957,196" size="260,340" zPosition="4" backgroundColor="#30000000" transparent="1" alphatest="blend" />
+  <widget name="poster" position="900,146" size="260,340" zPosition="4" backgroundColor="#30000000" transparent="1" alphatest="blend" />
   <widget backgroundColor="#30000000" font="Regular; 34" foregroundColor="#00ffffff" position="70,12" render="Label" size="708,46" source="Title" transparent="1" halign="center" valign="center" noWrap="1" />
-  <ePixmap pixmap="/usr/lib/enigma2/python/Plugins/Extensions/Filmon/skin/images/key_red1.png" position="22,670" size="32,37" backgroundColor="#30000000" alphatest="blend" />
   <widget name="red" font="Regular; 20" halign="left" valign="center" position="64,662" size="148,48" backgroundColor="#30000000" foregroundColor="#00ffffff" transparent="1" zPosition="1" />
-  <widget source="global.CurrentTime" render="Label" position="1154,16" size="100,28" font="Regular;26" halign="right" backgroundColor="#30000000" transparent="1" valign="center" foregroundColor="#00ffffff">
+  <widget source="global.CurrentTime" render="Label" position="1116,24" size="100,28" font="Regular;26" halign="right" backgroundColor="#30000000" transparent="1" valign="center" foregroundColor="#00ffffff">
     <convert type="ClockToText">Default</convert>
   </widget>
   <eLabel backgroundColor="#00ffffff" position="0,64" size="1280,2" zPosition="2" />
