@@ -12,7 +12,9 @@
 #Info http://t.me/tivustream
 '''
 from __future__ import print_function
-# from __future__ import absolute_import
+from . import Utils
+from . import html_conv
+from Components.AVSwitch import AVSwitch
 from Components.ActionMap import ActionMap
 from Components.Label import Label
 from Components.MenuList import MenuList
@@ -47,8 +49,7 @@ import json
 import ssl
 import requests
 import urllib3
-from . import Utils
-from . import html_conv
+
 global skin_path
 
 
@@ -93,7 +94,7 @@ if sys.version_info >= (2, 7, 9):
         sslContext = None
 
 try:
-    # from OpenSSL import SSL
+    from OpenSSL import SSL
     from twisted.internet import ssl
     from twisted.internet._sslverify import ClientTLSOptions
     sslverify = True
