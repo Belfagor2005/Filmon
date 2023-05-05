@@ -52,20 +52,57 @@ import urllib3
 
 global skin_path
 
-
+PY2 = False
 PY3 = False
-PY3 = sys.version_info.major >= 3
-print('Py3: ', PY3)
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
 
-try:
+# try:
+    # from urllib.parse import urlparse
+    # from urllib.request import Request
+    # from urllib.request import urlopen
+    # PY3 = True
+# except:
+    # from urlparse import urlparse
+    # from urllib2 import Request
+    # from urllib2 import urlopen
+
+if PY3:
+    bytes = bytes
+    str = unicode = basestring = str
+    range = range
+    zip = zip
+
+    def iteritems(d, **kw):
+        return iter(d.items(**kw))
+
+    from urllib.parse import quote
     from urllib.parse import urlparse
-    from urllib.request import Request
     from urllib.request import urlopen
-    PY3 = True
-except:
+    from urllib.request import Request
+    from urllib.error import HTTPError, URLError
+
+if PY2:
+    _str = str
+    str = unicode
+    range = xrange
+    from itertools import izip
+    zip = izip
+    unicode = unicode
+    basestring = basestring
+
+    def bytes(b, encoding="ascii"):
+        return _str(b)
+
+    def iteritems(d, **kw):
+        return d.iteritems(**kw)
+
     from urlparse import urlparse
-    from urllib2 import Request
+    from urllib import quote
     from urllib2 import urlopen
+    from urllib2 import Request
+    from urllib2 import HTTPError, URLError
+
 
 currversion = '1.8'
 cj = {}
