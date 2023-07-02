@@ -25,7 +25,10 @@ from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
 from Components.config import config
 from Plugins.Plugin import PluginDescriptor
 from Screens.InfoBarGenerics import InfoBarMenu, InfoBarSeek
-from Screens.InfoBarGenerics import InfoBarAudioSelection, InfoBarNotifications
+from Screens.InfoBarGenerics import InfoBarMenu, InfoBarSeek
+from Screens.InfoBarGenerics import InfoBarAudioSelection
+from Screens.InfoBarGenerics import InfoBarSubtitleSupport
+from Screens.InfoBarGenerics import InfoBarNotifications
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from Tools.Directories import SCOPE_PLUGINS
@@ -40,6 +43,7 @@ from enigma import eTimer
 from enigma import gFont
 from enigma import iPlayableService
 from enigma import loadPNG
+from enigma import getDesktop
 from twisted.web.client import downloadPage, getPage
 import os
 import re
@@ -112,8 +116,13 @@ desc_plugin = '..:: Live Filmon by Lululla %s ::.. ' % currversion
 _firstStartfo = True
 
 global skin_path
+screenwidth = getDesktop(0).size()
+if screenwidth.width() == 2560:
+    skin_path = os.path.join(PLUGIN_PATH, 'skin/skin_pli/defaultListScreen_newuhd.xml')
+    if Utils.DreamOS():
+        skin_path = os.path.join(PLUGIN_PATH, 'skin/skin_cvs/defaultListScreen_newuhd.xml')
 
-if Utils.isFHD():
+elif screenwidth.width() == 1920:
     skin_path = os.path.join(PLUGIN_PATH, 'skin/skin_pli/defaultListScreen_new.xml')
     if Utils.DreamOS():
         skin_path = os.path.join(PLUGIN_PATH, 'skin/skin_cvs/defaultListScreen_new.xml')
@@ -175,7 +184,11 @@ class m2list(MenuList):
 
     def __init__(self, list):
         MenuList.__init__(self, list, True, eListboxPythonMultiContent)
-        if Utils.isFHD():
+        if screenwidth.width() == 2560:
+            self.l.setItemHeight(70)
+            textfont = int(42)
+            self.l.setFont(0, gFont('Regular', textfont))        
+        elif screenwidth.width() == 1920:
             self.l.setItemHeight(60)
             textfont = int(30)
             self.l.setFont(0, gFont('Regular', textfont))
@@ -192,7 +205,10 @@ def show_(name, link, img, session, description):
             session,
             description)]
     page1 = os.path.join(PLUGIN_PATH, 'skin/images_new/50x50.png')
-    if Utils.isFHD():
+    if screenwidth.width() == 2560:
+        res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(60, 60), png=loadPNG(page1)))
+        res.append(MultiContentEntryText(pos=(110, 0), size=(1200, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))    
+    elif screenwidth.width() == 1920:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(50, 50), png=loadPNG(page1)))
         res.append(MultiContentEntryText(pos=(90, 0), size=(1000, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     else:
@@ -251,7 +267,7 @@ class filmon(Screen):
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions',
                                      'DirectionActions',
-                                     'ButtonSetupActions',
+                                     # 'ButtonSetupActions',
                                      'MovieSelectionActions'], {'up': self.up,
                                                                 'down': self.down,
                                                                 'left': self.left,
@@ -262,28 +278,44 @@ class filmon(Screen):
         self.onLayoutFinish.append(self.downxmlpage)
 
     def up(self):
-        self[self.currentList].up()
-        auswahl = self['menulist'].getCurrent()[0][0]
-        self['name'].setText(str(auswahl))
-        self.load_poster()
+        try:
+            self[self.currentList].up()
+            self.auswahl = self['menulist'].getCurrent()[0][0]
+            # print('get current: ', type(self.auswahl))
+            self['name'].setText(self.auswahl)
+            self.load_poster()
+        except Exception as e:
+            print(e)
 
     def down(self):
-        self[self.currentList].down()
-        auswahl = self['menulist'].getCurrent()[0][0]
-        self['name'].setText(str(auswahl))
-        self.load_poster()
+        try:
+            self[self.currentList].down()
+            self.auswahl = self['menulist'].getCurrent()[0][0]
+            # print('get current: ', type(self.auswahl))
+            self['name'].setText(str(self.auswahl))
+            self.load_poster()
+        except Exception as e:
+            print(e)
 
     def left(self):
-        self[self.currentList].pageUp()
-        auswahl = self['menulist'].getCurrent()[0][0]
-        self['name'].setText(str(auswahl))
-        self.load_poster()
+        try:
+            self[self.currentList].pageUp()
+            self.auswahl = self['menulist'].getCurrent()[0][0]
+            # print('get current: ', type(self.auswahl))
+            self['name'].setText(self.auswahl)
+            self.load_poster()
+        except Exception as e:
+            print(e)
 
     def right(self):
-        self[self.currentList].pageDown()
-        auswahl = self['menulist'].getCurrent()[0][0]
-        self['name'].setText(str(auswahl))
-        self.load_poster()
+        try:
+            self[self.currentList].pageDown()
+            self.auswahl = self['menulist'].getCurrent()[0][0]
+            # print('get current: ', type(self.auswahl))
+            self['name'].setText(self.auswahl)
+            self.load_poster()
+        except Exception as e:
+            print(e)
 
     def downxmlpage(self):
         url = 'http://www.filmon.com/group'
@@ -295,6 +327,7 @@ class filmon(Screen):
         self['name'].setText(_('Try again later ...'))
 
     def _gotPageLoad(self, data):
+        self.auswahl = ''
         self.index = 'group'
         self.cat_list = []
         global sessionx
@@ -323,12 +356,15 @@ class filmon(Screen):
             self.cat_list.append(show_(name, url, img, sessionx, pic))
         self['menulist'].l.setList(self.cat_list)
         self['menulist'].moveToIndex(0)
-        auswahl = self['menulist'].getCurrent()[0][0]
-        self['name'].setText(str(auswahl))
+        self['name'].setText('Select')
+        self.auswahl = self['menulist'].getCurrent()[0][0]
+        # print('get current: ', self.auswahl)
+        self['name'].setText(self.auswahl)
         self['text'].setText('')
         self.load_poster()
 
     def cat(self, url):
+        self.auswahl = ''
         self.index = 'cat'
         self.cat_list = []
         self.id = ''
@@ -359,8 +395,8 @@ class filmon(Screen):
             self.cat_list.append(show_(title, id, img, sessionx, description))
         self['menulist'].l.setList(self.cat_list)
         self['menulist'].moveToIndex(0)
-        auswahl = self['menulist'].getCurrent()[0][0]
-        self['name'].setText(str(auswahl))
+        self.auswahl = self['menulist'].getCurrent()[0][0]
+        self['name'].setText(str(self.auswahl))
         self.load_poster()
 
     def get_session(self):
@@ -611,6 +647,7 @@ class Playstream2(
                   InfoBarMenu,
                   InfoBarSeek,
                   InfoBarAudioSelection,
+                  InfoBarSubtitleSupport,
                   InfoBarNotifications,
                   TvInfoBarShowHide,
                   Screen
@@ -618,15 +655,15 @@ class Playstream2(
     STATE_IDLE = 0
     STATE_PLAYING = 1
     STATE_PAUSED = 2
-    # ENABLE_RESUME_SUPPORT = True
+    ENABLE_RESUME_SUPPORT = True
     ALLOW_SUSPEND = True
     screen_timeout = 5000
 
     def __init__(self, session, name, url):
         global streaml
         Screen.__init__(self, session)
-        global _session
-        _session = session
+        # global _session
+        # _session = session
         self.session = session
         self.skinName = 'MoviePlayer'
         streaml = False
@@ -634,6 +671,7 @@ class Playstream2(
                 InfoBarMenu, \
                 InfoBarSeek, \
                 InfoBarAudioSelection, \
+                InfoBarSubtitleSupport, \
                 InfoBarNotifications, \
                 TvInfoBarShowHide:
             x.__init__(self)
@@ -642,12 +680,17 @@ class Playstream2(
         except:
             self.init_aspect = 0
         self.new_aspect = self.init_aspect
+        self.allowPiP = False
+        self.service = None
+        # self.stream = stream
+        self.state = self.STATE_PLAYING
         self['actions'] = ActionMap(['MoviePlayerActions',
                                      'MovieSelectionActions',
                                      'MediaPlayerActions',
                                      'EPGSelectActions',
                                      'MediaPlayerSeekActions',
                                      'ColorActions',
+                                     'DirectionActions',
                                      'ButtonSetupActions',
                                      'OkCancelActions',
                                      'InfobarShowHideActions',
@@ -660,6 +703,8 @@ class Playstream2(
                                                              'leavePlayer': self.cancel,
                                                              'back': self.leavePlayer,
                                                              # 'stop': self.leavePlayer,
+                                                             'playpauseService': self.playpauseService,
+                                                             'down': self.av,
                                                              'cancel': self.cancel}, -1)
         self.service = None
         self.url = url
@@ -720,6 +765,36 @@ class Playstream2(
         if returnIMDB(text_clear):
             print('show imdb/tmdb')
 
+    def to_bytes(value, encoding='utf-8'):
+        """
+        Makes sure the value is encoded as a byte string.
+        :param value: The Python string value to encode.
+        :param encoding: The encoding to use.
+        :return: The byte string that was encoded.
+        """
+        if isinstance(value, six.binary_type):
+            return value
+        return value.encode(encoding)
+    def openPlay(self):
+        try:
+            self.session.nav.stopService()
+            self.session.nav.playService(self.url)
+        except Exception as e:
+            print('error player ', e)
+
+    def playpauseService(self):
+        if self.state == self.STATE_PLAYING:
+            self.pause()
+            self.state = self.STATE_PAUSED
+        elif self.state == self.STATE_PAUSED:
+            self.unpause()
+            self.state = self.STATE_PLAYING
+
+    def pause(self):
+        self.session.nav.pause(True)
+
+    def unpause(self):
+        self.session.nav.pause(False)
     def openYtdl(self):
         name = self.name
         url = 'streamlink%3a//' + self.url
@@ -823,7 +898,7 @@ class Playstream2(
             except:
                 pass
         # streaml = False
-        self.close()
+        self.leavePlayer()
 
     def leavePlayer(self):
         self.close()
