@@ -205,6 +205,7 @@ def show_(name, link, img, session, description):
             session,
             description)]
     page1 = os.path.join(PLUGIN_PATH, 'skin/images_new/50x50.png')
+    
     if screenwidth.width() == 2560:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(60, 60), png=loadPNG(page1)))
         res.append(MultiContentEntryText(pos=(110, 0), size=(1200, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))    
@@ -356,7 +357,9 @@ class filmon(Screen):
             self.cat_list.append(show_(name, url, img, sessionx, pic))
         self['menulist'].l.setList(self.cat_list)
         self['menulist'].moveToIndex(0)
+        
         self['name'].setText('Select')
+        
         self.auswahl = self['menulist'].getCurrent()[0][0]
         # print('get current: ', self.auswahl)
         self['name'].setText(self.auswahl)
@@ -706,11 +709,18 @@ class Playstream2(
                                                              'playpauseService': self.playpauseService,
                                                              'down': self.av,
                                                              'cancel': self.cancel}, -1)
+                                                             
         self.service = None
         self.url = url
         self.name = html_conv.html_unescape(name)
         self.state = self.STATE_PLAYING
         self.srefInit = self.session.nav.getCurrentlyPlayingServiceReference()
+
+        # self.onFirstExecBegin.append(self.openPlay)
+        # self.onFirstExecBegin.append(self.openYtdl)    
+        # self.onClose.append(self.cancel)
+        
+
         # self.onLayoutFinish.append(self.cicleStreamType)
         if '8088' in str(self.url):
             # self.onLayoutFinish.append(self.slinkPlay)
@@ -721,7 +731,6 @@ class Playstream2(
 
         # self.onFirstExecBegin.append(self.openYtdl)    
         self.onClose.append(self.cancel)
-
     def getAspect(self):
         return AVSwitch().getAspectRatioSetting()
 
@@ -775,6 +784,7 @@ class Playstream2(
         if isinstance(value, six.binary_type):
             return value
         return value.encode(encoding)
+
     def openPlay(self):
         try:
             self.session.nav.stopService()
@@ -795,6 +805,7 @@ class Playstream2(
 
     def unpause(self):
         self.session.nav.pause(False)
+
     def openYtdl(self):
         name = self.name
         url = 'streamlink%3a//' + self.url
@@ -802,7 +813,7 @@ class Playstream2(
         ref = "{0}:0:1:0:0:0:0:0:0:0:{1}:{2}".format(servicetype, url.replace(":", "%3a"), name.replace(":", "%3a"))
         print('reference youtube:   ', ref)
         sref = eServiceReference(ref)
-        sref.setName(name)
+        sref.setName(str(name))
         self.session.nav.stopService()
         self.session.nav.playService(sref)
 
@@ -810,22 +821,22 @@ class Playstream2(
         ref = str(url)
         ref = ref.replace(':', '%3a').replace(' ', '%20')
         print('final reference 1:   ', ref)
-        ref = "{0}:{1}".format(ref, self.name)
+        ref = "{0}:{1}".format(ref, str(self.name))
         sref = eServiceReference(ref)
-        sref.setName(self.name)
+        sref.setName(str(self.name))
         self.session.nav.stopService()
         self.session.nav.playService(sref)
 
     def openTest(self, servicetype, url):
         url = url.replace(':', '%3a').replace(' ', '%20')
-        ref = str(servicetype) + ':0:1:0:0:0:0:0:0:0:' + str(url)  # + ':' + self.name
+        ref = servicetype + ':0:1:0:0:0:0:0:0:0:' + str(url)  # + ':' + self.name
 
         if streaml is True:
-            ref = str(servicetype) + ':0:1:0:0:0:0:0:0:0:http%3a//127.0.0.1%3a8088/' + str(url) + ':' + self.name
+            ref = servicetype + ':0:1:0:0:0:0:0:0:0:http%3a//127.0.0.1%3a8088/' + str(url) + ':' + str(self.name)
 
         print('final reference:   ', ref)
         sref = eServiceReference(ref)
-        sref.setName(self.name)
+        sref.setName(str(self.name))
         self.session.nav.stopService()
         self.session.nav.playService(sref)
 
@@ -841,20 +852,20 @@ class Playstream2(
                 self.servicetype = "4097"
         currentindex = 0
         streamtypelist = ["4097"]
-        '''
+
         if "youtube" in str(self.url):
             self.mbox = self.session.open(MessageBox, _('For Stream Youtube coming soon!'), MessageBox.TYPE_INFO, timeout=5)
             return
-        if isStreamlinkAvailable():
-            streamtypelist.append("5002")
-            streaml = True
+        # if isStreamlinkAvailable():
+            # streamtypelist.append("5002")
+            # streaml = True
         if os.path.exists("/usr/bin/gstplayer"):
             streamtypelist.append("5001")
         if os.path.exists("/usr/bin/exteplayer3"):
             streamtypelist.append("5002")
-        '''
-        if os.path.exists("/usr/bin/apt-get"):
-            streamtypelist.append("8193")
+
+        # if os.path.exists("/usr/bin/apt-get"):
+            # streamtypelist.append("8193")
         for index, item in enumerate(streamtypelist, start=0):
             if str(item) == str(self.servicetype):
                 currentindex = index
