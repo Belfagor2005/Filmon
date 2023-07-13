@@ -7,7 +7,7 @@ print("Update.py")
 
 
 def upd_done():
-    from os import popen, remove
+    from os import popen, system
     cmd01 = "wget http://patbuweb.com/filmon/filmon.tar -O /tmp/filmon.tar ; tar -xvf /tmp/filmon.tar -C /"
     cmd02 = "wget --no-check-certificate -U 'Enigma2 - filmon Plugin' -c 'http://patbuweb.com/filmon/filmon.tar' -O '/tmp/filmon.tar'; tar -xvf /tmp/filmon.tar -C /"
     cmd22 = 'find /usr/bin -name "wget"'
@@ -19,7 +19,7 @@ def upd_done():
         popen(cmd02)
     except:
         popen(cmd01)
-    remove('/tmp/filmon.tar')
+    system('rm -rf /tmp/filmon.tar')
     return
 
 '''

@@ -61,15 +61,6 @@ PY3 = False
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 
-# try:
-    # from urllib.parse import urlparse
-    # from urllib.request import Request
-    # from urllib.request import urlopen
-    # PY3 = True
-# except:
-    # from urlparse import urlparse
-    # from urllib2 import Request
-    # from urllib2 import urlopen
 
 if PY3:
     bytes = bytes
@@ -241,6 +232,7 @@ def returnIMDB(text_clear):
         text_clear = html_conv.html_unescape(text_clear)
         _session.open(MessageBox, text_clear, MessageBox.TYPE_INFO)
         return True
+    return False
 
 
 class filmon(Screen):
