@@ -535,7 +535,7 @@ class filmon(Screen):
         if os.path.exists(png):
             size = self['poster'].instance.size()
             self.picload = ePicLoad()
-            self.scale = AVSwitch().getFramebufferScale()
+            self.scale = eAVSwitch().getFramebufferScale()
             self.picload.setPara([size.width(), size.height(), self.scale[0], self.scale[1], 0, 1, '#00000000'])
             if Utils.DreamOS():
                 self.picload.startDecode(png, False)
@@ -727,7 +727,7 @@ class Playstream2(
         # self.onFirstExecBegin.append(self.openYtdl)    
         self.onClose.append(self.cancel)
     def getAspect(self):
-        return AVSwitch().getAspectRatioSetting()
+        return eAVSwitch().getAspectRatioSetting()
 
     def getAspectString(self, aspectnum):
         return {
@@ -752,7 +752,7 @@ class Playstream2(
         }
         config.av.aspectratio.setValue(map[aspect])
         try:
-            AVSwitch().setAspectRatio(aspect)
+            eAVSwitch().setAspectRatio(aspect)
         except:
             pass
 
