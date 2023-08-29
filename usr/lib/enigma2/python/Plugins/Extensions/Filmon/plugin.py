@@ -5,7 +5,7 @@
 ****************************************
 *        coded by Lululla & PCD        *
 *             skin by MMark            *
-*             14/01/2023               *
+*             28/08/2023               *
 *       Skin by MMark                  *
 ****************************************
 #--------------------#
@@ -15,9 +15,9 @@ from __future__ import print_function
 from . import Utils
 from . import html_conv
 try:
-    from Components.AVSwitch import eAVSwitch
+    from Components.AVSwitch import AVSwitch
 except Exception:
-    from Components.AVSwitch import iAVSwitch as eAVSwitch
+    from Components.AVSwitch import iAVSwitch as AVSwitch
 from Components.ActionMap import ActionMap
 from Components.Label import Label
 from Components.MenuList import MenuList
@@ -102,7 +102,7 @@ if PY2:
     from urllib2 import HTTPError, URLError
 
 
-currversion = '1.8'
+currversion = '1.9'
 cj = {}
 PLUGIN_PATH = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('Filmon'))
 title_plug = 'Filmon Player'
@@ -535,7 +535,7 @@ class filmon(Screen):
         if os.path.exists(png):
             size = self['poster'].instance.size()
             self.picload = ePicLoad()
-            self.scale = eAVSwitch().getFramebufferScale()
+            self.scale = AVSwitch().getFramebufferScale()
             self.picload.setPara([size.width(), size.height(), self.scale[0], self.scale[1], 0, 1, '#00000000'])
             if Utils.DreamOS():
                 self.picload.startDecode(png, False)
@@ -545,8 +545,6 @@ class filmon(Screen):
             if ptr is not None:
                 self['poster'].instance.setPixmap(ptr)
                 self['poster'].show()
-            else:
-                print('no cover.. error')
             return
 
 
@@ -660,8 +658,6 @@ class Playstream2(
     def __init__(self, session, name, url):
         global streaml
         Screen.__init__(self, session)
-        # global _session
-        # _session = session
         self.session = session
         self.skinName = 'MoviePlayer'
         streaml = False
@@ -680,7 +676,6 @@ class Playstream2(
         self.new_aspect = self.init_aspect
         self.allowPiP = False
         self.service = None
-        # self.stream = stream
         self.state = self.STATE_PLAYING
         self['actions'] = ActionMap(['MoviePlayerActions',
                                      'MovieSelectionActions',
@@ -710,24 +705,13 @@ class Playstream2(
         self.name = html_conv.html_unescape(name)
         self.state = self.STATE_PLAYING
         self.srefInit = self.session.nav.getCurrentlyPlayingServiceReference()
-
-        # self.onFirstExecBegin.append(self.openPlay)
-        # self.onFirstExecBegin.append(self.openYtdl)    
-        # self.onClose.append(self.cancel)
-        
-
-        # self.onLayoutFinish.append(self.cicleStreamType)
         if '8088' in str(self.url):
-            # self.onLayoutFinish.append(self.slinkPlay)
             self.onFirstExecBegin.append(self.slinkPlay)
         else:
-            # self.onLayoutFinish.append(self.cicleStreamType)
             self.onFirstExecBegin.append(self.cicleStreamType)
-
-        # self.onFirstExecBegin.append(self.openYtdl)    
         self.onClose.append(self.cancel)
     def getAspect(self):
-        return eAVSwitch().getAspectRatioSetting()
+        return AVSwitch().getAspectRatioSetting()
 
     def getAspectString(self, aspectnum):
         return {
@@ -752,7 +736,7 @@ class Playstream2(
         }
         config.av.aspectratio.setValue(map[aspect])
         try:
-            eAVSwitch().setAspectRatio(aspect)
+            AVSwitch().setAspectRatio(aspect)
         except:
             pass
 
