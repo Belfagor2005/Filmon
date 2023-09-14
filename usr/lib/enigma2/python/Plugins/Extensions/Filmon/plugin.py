@@ -14,10 +14,12 @@
 from __future__ import print_function
 from . import Utils
 from . import html_conv
+import codecs
+from Components.AVSwitch import AVSwitch
 try:
-    from Components.AVSwitch import AVSwitch
-except Exception:
-    from Components.AVSwitch import iAVSwitch as AVSwitch
+    from Components.AVSwitch import iAVSwitch
+except:
+    from enigma import eAVSwitch
 from Components.ActionMap import ActionMap
 from Components.Label import Label
 from Components.MenuList import MenuList
@@ -242,7 +244,7 @@ class filmon(Screen):
     def __init__(self, session):
         self.session = session
         skin = skin_path
-        with open(skin, 'r') as f:
+        with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
         Screen.__init__(self, session)
         global _session
@@ -710,35 +712,36 @@ class Playstream2(
         else:
             self.onFirstExecBegin.append(self.cicleStreamType)
         self.onClose.append(self.cancel)
+
     def getAspect(self):
-        return AVSwitch().getAspectRatioSetting()
+        try:
+            aspect = iAVSwitch.getAspectRatioSetting()
+        except:
+            aspect = eAVSwitch.getAspectRatioSetting()
+        return aspect
 
     def getAspectString(self, aspectnum):
-        return {
-            0: '4:3 Letterbox',
-            1: '4:3 PanScan',
-            2: '16:9',
-            3: '16:9 always',
-            4: '16:10 Letterbox',
-            5: '16:10 PanScan',
-            6: '16:9 Letterbox'
-        }[aspectnum]
+        return {0: '4:3 Letterbox',
+                1: '4:3 PanScan',
+                2: '16:9',
+                3: '16:9 always',
+                4: '16:10 Letterbox',
+                5: '16:10 PanScan',
+                6: '16:9 Letterbox'}[aspectnum]
 
     def setAspect(self, aspect):
-        map = {
-            0: '4_3_letterbox',
-            1: '4_3_panscan',
-            2: '16_9',
-            3: '16_9_always',
-            4: '16_10_letterbox',
-            5: '16_10_panscan',
-            6: '16_9_letterbox'
-        }
+        map = {0: '4_3_letterbox',
+               1: '4_3_panscan',
+               2: '16_9',
+               3: '16_9_always',
+               4: '16_10_letterbox',
+               5: '16_10_panscan',
+               6: '16_9_letterbox'}
         config.av.aspectratio.setValue(map[aspect])
         try:
-            AVSwitch().setAspectRatio(aspect)
+            iAVSwitch.setAspectRatio(aspect)
         except:
-            pass
+            eAVSwitch.setAspectRatio(aspect)
 
     def av(self):
         temp = int(self.getAspect())
