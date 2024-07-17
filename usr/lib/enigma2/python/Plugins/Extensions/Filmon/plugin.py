@@ -3,7 +3,7 @@
 
 '''
 ****************************************
-*        coded by Lululla & PCD        *
+*        coded by Lululla              *
 *             skin by MMark            *
 *             28/08/2023               *
 *       Skin by MMark                  *
@@ -12,44 +12,45 @@
 #Info http://t.me/tivustream
 '''
 from __future__ import print_function
+from . import _
 from . import Utils
 from . import html_conv
-import codecs
+from .Console import Console as xConsole
+
 from Components.AVSwitch import AVSwitch
-try:
-    from enigma import eAVSwitch
-except Exception as e:
-    print(e)
 from Components.ActionMap import ActionMap
 from Components.Label import Label
 from Components.MenuList import MenuList
-from Components.MultiContent import MultiContentEntryText
-from Components.MultiContent import MultiContentEntryPixmapAlphaTest
+from Components.MultiContent import (MultiContentEntryPixmapAlphaTest, MultiContentEntryText)
 from Components.Pixmap import Pixmap
-from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
+from Components.ServiceEventTracker import (ServiceEventTracker, InfoBarBase)
 from Components.config import config
 from Plugins.Plugin import PluginDescriptor
-from Screens.InfoBarGenerics import InfoBarMenu, InfoBarSeek
-from Screens.InfoBarGenerics import InfoBarMenu, InfoBarSeek
-from Screens.InfoBarGenerics import InfoBarAudioSelection
-from Screens.InfoBarGenerics import InfoBarSubtitleSupport
-from Screens.InfoBarGenerics import InfoBarNotifications
+from Screens.InfoBarGenerics import (
+    InfoBarSubtitleSupport,
+    InfoBarSeek,
+    InfoBarAudioSelection,
+    InfoBarMenu,
+    InfoBarNotifications,
+)
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
-from Tools.Directories import SCOPE_PLUGINS
-from Tools.Directories import pathExists
-from Tools.Directories import resolveFilename
-from enigma import RT_VALIGN_CENTER
-from enigma import RT_HALIGN_LEFT
-from enigma import eListboxPythonMultiContent
-from enigma import ePicLoad
-from enigma import eServiceReference
-from enigma import eTimer
-from enigma import gFont
-from enigma import iPlayableService
-from enigma import loadPNG
-from enigma import getDesktop
-from twisted.web.client import downloadPage, getPage
+from Tools.Directories import (SCOPE_PLUGINS, resolveFilename, pathExists)
+from enigma import (
+    RT_VALIGN_CENTER,
+    RT_HALIGN_LEFT,
+    eTimer,
+    eListboxPythonMultiContent,
+    ePicLoad,
+    eServiceReference,
+    iPlayableService,
+    gFont,
+    loadPNG,
+    getDesktop,
+)
+from datetime import datetime
+from twisted.web.client import (downloadPage, getPage)
+import codecs
 import os
 import re
 import six
@@ -71,7 +72,6 @@ if PY3:
     bytes = bytes
     str = unicode = basestring = str
     range = range
-    zip = zip
 
     def iteritems(d, **kw):
         return iter(d.items(**kw))
@@ -80,14 +80,12 @@ if PY3:
     from urllib.parse import urlparse
     from urllib.request import urlopen
     from urllib.request import Request
-    from urllib.error import HTTPError, URLError
 
 if PY2:
     _str = str
     str = unicode
     range = xrange
     from itertools import izip
-    zip = izip
     unicode = unicode
     basestring = basestring
 
@@ -101,16 +99,15 @@ if PY2:
     from urllib import quote
     from urllib2 import urlopen
     from urllib2 import Request
-    from urllib2 import HTTPError, URLError
 
 
-currversion = '1.9'
+currversion = '2.0'
 cj = {}
 PLUGIN_PATH = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('Filmon'))
 title_plug = 'Filmon Player'
 desc_plugin = '..:: Live Filmon by Lululla %s ::.. ' % currversion
-_firstStartfo = True
-
+installer_url = 'aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL0JlbGZhZ29yMjAwNS9GaWxtb24vbWFpbi9pbnN0YWxsZXIuc2g='
+developer_url = 'aHR0cHM6Ly9hcGkuZ2l0aHViLmNvbS9yZXBvcy9CZWxmYWdvcjIwMDUvRmlsbW9u'
 global skin_path
 screenwidth = getDesktop(0).size()
 if screenwidth.width() == 2560:
@@ -183,7 +180,7 @@ class m2list(MenuList):
         if screenwidth.width() == 2560:
             self.l.setItemHeight(70)
             textfont = int(42)
-            self.l.setFont(0, gFont('Regular', textfont))        
+            self.l.setFont(0, gFont('Regular', textfont))
         elif screenwidth.width() == 1920:
             self.l.setItemHeight(60)
             textfont = int(30)
@@ -193,7 +190,7 @@ class m2list(MenuList):
             textfont = int(24)
             self.l.setFont(0, gFont('Regular', textfont))
 
-    
+
 def show_(name, link, img, session, description):
     res = [(name,
             link,
@@ -201,10 +198,10 @@ def show_(name, link, img, session, description):
             session,
             description)]
     page1 = os.path.join(PLUGIN_PATH, 'skin/images_new/50x50.png')
-    
+
     if screenwidth.width() == 2560:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(60, 60), png=loadPNG(page1)))
-        res.append(MultiContentEntryText(pos=(110, 0), size=(1200, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))    
+        res.append(MultiContentEntryText(pos=(110, 0), size=(1200, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     elif screenwidth.width() == 1920:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(50, 50), png=loadPNG(page1)))
         res.append(MultiContentEntryText(pos=(90, 0), size=(1000, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
@@ -253,33 +250,101 @@ class filmon(Screen):
         self.setTitle(title_plug)
         self['menulist'] = m2list([])
         self['red'] = Label(_('Exit'))
-        # self['title'] = Label('')
+        self['yellow'] = Label(_('Update'))
         self['name'] = Label('Loading data... Please wait')
-        self['text'] = Label('')
+        self['text'] = Label()
         self['poster'] = Pixmap()
         self.picload = ePicLoad()
-        self.picfile = ''
-        self.dnfile = 'False'
         self.currentList = 'menulist'
-        self.loading_ok = False
+        self.Update = False
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions',
-                                     'DirectionActions',
-                                     # 'ButtonSetupActions',
-                                     'MovieSelectionActions'], {'up': self.up,
-                                                                'down': self.down,
-                                                                'left': self.left,
-                                                                'right': self.right,
-                                                                'ok': self.ok,
-                                                                'cancel': self.exit,
-                                                                'red': self.exit}, -1)
+                                     'HotkeyActions',
+                                     'InfobarEPGActions',
+                                     'ChannelSelectBaseActions',
+                                     'DirectionActions'], {'ok': self.ok,
+                                                           'up': self.up,
+                                                           'down': self.down,
+                                                           'left': self.left,
+                                                           'right': self.right,
+                                                           'yellow': self.update_me,  # update_me,
+                                                           'yellow_long': self.update_dev,
+                                                           'info_long': self.update_dev,
+                                                           'infolong': self.update_dev,
+                                                           'showEventInfoPlugin': self.update_dev,
+                                                           'green': self.ok,
+                                                           'cancel': self.closerm,
+                                                           'red': self.closerm}, -1)
+        self.timer = eTimer()
+        if os.path.exists('/var/lib/dpkg/status'):
+            self.timer_conn = self.timer.timeout.connect(self.check_vers)
+        else:
+            self.timer.callback.append(self.check_vers)
+        self.timer.start(500, 1)
         self.onLayoutFinish.append(self.downxmlpage)
+
+    def check_vers(self):
+        remote_version = '0.0'
+        remote_changelog = ''
+        req = Utils.Request(Utils.b64decoder(installer_url), headers={'User-Agent': 'Mozilla/5.0'})
+        page = Utils.urlopen(req).read()
+        if PY3:
+            data = page.decode("utf-8")
+        else:
+            data = page.encode("utf-8")
+        if data:
+            lines = data.split("\n")
+            for line in lines:
+                if line.startswith("version"):
+                    remote_version = line.split("=")
+                    remote_version = line.split("'")[1]
+                if line.startswith("changelog"):
+                    remote_changelog = line.split("=")
+                    remote_changelog = line.split("'")[1]
+                    break
+        self.new_version = remote_version
+        self.new_changelog = remote_changelog
+        # if currversion < remote_version:
+        if float(currversion) < float(remote_version):
+            self.Update = True
+            # self['key_yellow'].show()
+            # self['key_green'].show()
+            self.session.open(MessageBox, _('New version %s is available\n\nChangelog: %s\n\nPress info_long or yellow_long button to start force updating.') % (self.new_version, self.new_changelog), MessageBox.TYPE_INFO, timeout=5)
+        # self.update_me()
+
+    def update_me(self):
+        if self.Update is True:
+            self.session.openWithCallback(self.install_update, MessageBox, _("New version %s is available.\n\nChangelog: %s \n\nDo you want to install it now?") % (self.new_version, self.new_changelog), MessageBox.TYPE_YESNO)
+        else:
+            self.session.open(MessageBox, _("Congrats! You already have the latest version..."),  MessageBox.TYPE_INFO, timeout=4)
+
+    def update_dev(self):
+        try:
+            req = Utils.Request(Utils.b64decoder(developer_url), headers={'User-Agent': 'Mozilla/5.0'})
+            page = Utils.urlopen(req).read()
+            data = json.loads(page)
+            remote_date = data['pushed_at']
+            strp_remote_date = datetime.strptime(remote_date, '%Y-%m-%dT%H:%M:%SZ')
+            remote_date = strp_remote_date.strftime('%Y-%m-%d')
+            self.session.openWithCallback(self.install_update, MessageBox, _("Do you want to install update ( %s ) now?") % (remote_date), MessageBox.TYPE_YESNO)
+        except Exception as e:
+            print('error xcons:', e)
+
+    def install_update(self, answer=False):
+        if answer:
+            cmd1 = 'wget -q "--no-check-certificate" ' + Utils.b64decoder(installer_url) + ' -O - | /bin/sh'
+            self.session.open(xConsole, 'Upgrading...', cmdlist=[cmd1], finishedCallback=self.myCallback, closeOnSuccess=False)
+        else:
+            self.session.open(MessageBox, _("Update Aborted!"),  MessageBox.TYPE_INFO, timeout=3)
+
+    def myCallback(self, result=None):
+        print('result:', result)
+        return
 
     def up(self):
         try:
             self[self.currentList].up()
             self.auswahl = self['menulist'].getCurrent()[0][0]
-            # print('get current: ', type(self.auswahl))
             self['name'].setText(self.auswahl)
             self.load_poster()
         except Exception as e:
@@ -289,7 +354,6 @@ class filmon(Screen):
         try:
             self[self.currentList].down()
             self.auswahl = self['menulist'].getCurrent()[0][0]
-            # print('get current: ', type(self.auswahl))
             self['name'].setText(str(self.auswahl))
             self.load_poster()
         except Exception as e:
@@ -299,7 +363,6 @@ class filmon(Screen):
         try:
             self[self.currentList].pageUp()
             self.auswahl = self['menulist'].getCurrent()[0][0]
-            # print('get current: ', type(self.auswahl))
             self['name'].setText(self.auswahl)
             self.load_poster()
         except Exception as e:
@@ -309,7 +372,6 @@ class filmon(Screen):
         try:
             self[self.currentList].pageDown()
             self.auswahl = self['menulist'].getCurrent()[0][0]
-            # print('get current: ', type(self.auswahl))
             self['name'].setText(self.auswahl)
             self.load_poster()
         except Exception as e:
@@ -354,13 +416,10 @@ class filmon(Screen):
             self.cat_list.append(show_(name, url, img, sessionx, pic))
         self['menulist'].l.setList(self.cat_list)
         self['menulist'].moveToIndex(0)
-        
         self['name'].setText('Select')
-        
         self.auswahl = self['menulist'].getCurrent()[0][0]
-        # print('get current: ', self.auswahl)
         self['name'].setText(self.auswahl)
-        self['text'].setText('')
+        # self['text'].setText()
         self.load_poster()
 
     def cat(self, url):
@@ -376,7 +435,6 @@ class filmon(Screen):
         r = page.read()
         if PY3:
             r = six.ensure_str(r)
-        print("content 3 =", r)
         try:
             n1 = r.find('channels"', 0)
             n2 = r.find('channels_count"', n1)
@@ -409,12 +467,10 @@ class filmon(Screen):
         content = page.read()
         if PY3:
             content = six.ensure_str(content)
-        print('content: ', content)
         x = json.loads(content)
         session = ''
         session = x["session_key"]
         if session:
-            print('session O ', str(session))
             return str(session)
         else:
             return 'none'
@@ -423,32 +479,28 @@ class filmon(Screen):
         try:
             if self.index == 'cat':
                 id = self['menulist'].getCurrent()[0][1]
-                print('iddddd : ', id)
                 session = self['menulist'].getCurrent()[0][3]
                 # id = Utils.checkStr(id)
-                referer = 'http://www.filmon.com'
-                urlx = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=rtmp'
-                content = Utils.ReadUrl2(urlx, referer)
-                regexvideo = 'session_key":"(.*?)"'
-                match = re.compile(regexvideo, re.DOTALL).findall(content)
-                print("In Filmon2 fpage match =", match)
+                # referer = 'http://www.filmon.com'
+                # urlx = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=rtmp'
+                # content = Utils.ReadUrl2(urlx, referer)
+                # regexvideo = 'session_key":"(.*?)"'
+                # match = re.compile(regexvideo, re.DOTALL).findall(content)
                 url = 'http://www.filmon.com/api-v2/channel/' + str(id) + "?session_key=" + session
                 self.get_rtmp(url)
             elif self.index == 'group':
                 url = self['menulist'].getCurrent()[0][1]
                 session = self['menulist'].getCurrent()[0][3]
-                print('url: ', url)
-                print('session: ', session)
                 self.cat(url)
         except Exception as e:
-            print(str(e))
-            print("Error: can't find file")
+            print("Error: can't find file", e)
+            print()
 
     def get_rtmp(self, data):
         try:
             # import requests
             from urllib3.exceptions import InsecureRequestWarning
-            from urllib3 import disable_warnings 
+            from urllib3 import disable_warnings
             disable_warnings(InsecureRequestWarning)
 
             referer = 'http://www.filmon.com'
@@ -460,11 +512,9 @@ class filmon(Screen):
             # print('rtmp: ', rtmp)
             if rtmp:
                 fin_url = rtmp[0].replace('\\', '')
-                print('fin_url: ', fin_url)
                 self.play_that_shit(str(fin_url))
         except Exception as ex:
-            print(ex)
-            print("Error: can't read data")
+            print("Error: can't read data", ex)
 
     def play_that_shit(self, data):
         desc = self['menulist'].l.getCurrentSelection()[0][0]
@@ -472,7 +522,7 @@ class filmon(Screen):
         name = desc
         self.session.open(Playstream2, name, url)
 
-    def exit(self):
+    def closerm(self):
         if self.index == 'group':
             Utils.deletetmp()
             self.close()
@@ -483,10 +533,9 @@ class filmon(Screen):
         global tmp_image
         if self.index == 'cat':
             descriptionX = self['menulist'].getCurrent()[0][4]
-            print('description: ', descriptionX)
             self['text'].setText(descriptionX)
-        else:
-            self['text'].setText('')
+        # else:
+            # self['text'].setText()
         pixmaps = self['menulist'].getCurrent()[0][2]
         tmp_image = '/tmp/filmon/poster.png'
 
@@ -509,8 +558,7 @@ class filmon(Screen):
                     else:
                         downloadPage(pixmaps, tmp_image).addCallback(self.downloadPic, tmp_image).addErrback(self.downloadError)
                 except Exception as ex:
-                    print(ex)
-                    print("Error: can't find file or read data")
+                    print("Error: can't find file or read data", ex)
             return
 
     def downloadPic(self, data, pictmp):
@@ -529,8 +577,7 @@ class filmon(Screen):
                 self.poster_resize(tmp_image)
         except Exception as ex:
             self.poster_resize(tmp_image)
-            print(ex)
-            print('exe downloadError')
+            print('exe downloadError', ex)
 
     def poster_resize(self, png):
         self["poster"].hide()
@@ -640,16 +687,14 @@ class TvInfoBarShowHide():
         print(text + " %s\n" % obj)
 
 
-class Playstream2(
-                  InfoBarBase,
+class Playstream2(InfoBarBase,
                   InfoBarMenu,
                   InfoBarSeek,
                   InfoBarAudioSelection,
                   InfoBarSubtitleSupport,
                   InfoBarNotifications,
                   TvInfoBarShowHide,
-                  Screen
-                  ):
+                  Screen):
     STATE_IDLE = 0
     STATE_PLAYING = 1
     STATE_PAUSED = 2
@@ -701,7 +746,7 @@ class Playstream2(
                                                              'playpauseService': self.playpauseService,
                                                              'down': self.av,
                                                              'cancel': self.cancel}, -1)
-                                                             
+
         self.service = None
         self.url = url
         self.name = html_conv.html_unescape(name)
@@ -893,36 +938,6 @@ class Playstream2(
         self.close()
 
 
-class AutoStartTimerFon:
-
-    def __init__(self, session):
-        self.session = session
-        global _firstStartfo
-        print("*** running AutoStartTimerFon ***")
-        if _firstStartfo:
-            self.runUpdate()
-
-    def runUpdate(self):
-        print("*** running update ***")
-        try:
-            from . import Update
-            Update.upd_done()
-            _firstStartfo = False
-        except Exception as e:
-            print('error Fxy', str(e))
-
-
-def autostart(reason, session=None, **kwargs):
-    print("*** running autostart ***")
-    global autoStartTimerFon
-    global _firstStartfo
-    if reason == 0:
-        if session is not None:
-            _firstStartfo = True
-            autoStartTimerFon = AutoStartTimerFon(session)
-    return
-
-
 def main(session, **kwargs):
     try:
         session.open(filmon)
@@ -935,7 +950,7 @@ def main(session, **kwargs):
 def Plugins(**kwargs):
     icona = 'plugin.png'
     extDescriptor = PluginDescriptor(name='Filmon Player', description=desc_plugin, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=icona, fnc=main)
-    result = [PluginDescriptor(name=title_plug, description=desc_plugin, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
-              PluginDescriptor(name=title_plug, description=desc_plugin, where=PluginDescriptor.WHERE_PLUGINMENU, icon=icona, fnc=main)]
+    result = [PluginDescriptor(name=title_plug, description=desc_plugin, where=PluginDescriptor.WHERE_PLUGINMENU, icon=icona, fnc=main)]
     result.append(extDescriptor)
     return result
+    # PluginDescriptor(name=title_plug, description=desc_plugin, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
