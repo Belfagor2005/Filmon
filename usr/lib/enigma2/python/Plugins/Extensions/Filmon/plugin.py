@@ -904,11 +904,23 @@ class Playstream2(InfoBarBase,
     def down(self):
         self.up()
 
+    # def doEofInternal(self, playing):
+        # self.close()
+
+    # def __evEOF(self):
+        # self.end = True
+
     def doEofInternal(self, playing):
-        self.close()
+        print('doEofInternal', playing)
+        vUtils.MemClean()
+        if self.execing and playing:
+            self.cicleStreamType()
 
     def __evEOF(self):
+        print('__evEOF')
         self.end = True
+        vUtils.MemClean()
+        self.cicleStreamType()
 
     def showVideoInfo(self):
         if self.shown:
