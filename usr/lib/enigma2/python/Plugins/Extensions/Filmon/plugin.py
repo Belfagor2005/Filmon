@@ -258,7 +258,6 @@ class filmon(Screen):
         self.currentList = 'menulist'
         self.Update = False
         self['actions'] = ActionMap(['OkCancelActions',
-                                     'ColorActions',
                                      'HotkeyActions',
                                      'InfobarEPGActions',
                                      'ChannelSelectBaseActions',
