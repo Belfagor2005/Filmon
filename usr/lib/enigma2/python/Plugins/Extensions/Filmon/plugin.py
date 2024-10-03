@@ -70,7 +70,6 @@ PY3 = sys.version_info[0] == 3
 
 if PY3:
     bytes = bytes
-    str = unicode = basestring = str
     range = range
 
     def iteritems(d, **kw):
