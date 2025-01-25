@@ -281,8 +281,8 @@ class filmon(Screen):
         self['text'] = Label()
         self['poster'] = Pixmap()
         self.picload = ePicLoad()
-        # self.currentList = 'menulist'
-        self.currentList = self['menulist']
+        self.currentList = 'menulist'
+        # self.currentList = self['menulist']
         self.Update = False
         self['actions'] = ActionMap(['OkCancelActions',
                                      'HotkeyActions',
@@ -502,8 +502,8 @@ class filmon(Screen):
         self['menulist'].l.setList(self.cat_list)
         self['menulist'].moveToIndex(0)
 
-        self.currentList = [(item[0], item[1]) for item in self.cat_list]
-        print('currentList=', self.currentList)
+        self.xcurrentList = [(item[0], item[1]) for item in self.cat_list]
+        print('xcurrentList=', self.xcurrentList)
 
         self.auswahl = self['menulist'].getCurrent()[0][0]
         self['name'].setText(str(self.auswahl))
@@ -537,12 +537,12 @@ class filmon(Screen):
             if selection is not None:
                 url = fin_url
                 print("name:", name, "url:", url)
-                self.play_that_shit(url, name, self.currentindex, item, self.currentList)
+                self.play_that_shit(url, name, self.currentindex, item, self.xcurrentList)
         except Exception as ex:
             print("Error: can't read data", ex)
 
-    def play_that_shit(self, url, name, index, item, currentList):
-        self.session.open(Playstream2, name, url, index, item, currentList)
+    def play_that_shit(self, url, name, index, item, xcurrentList):
+        self.session.open(Playstream2, name, url, index, item, xcurrentList)
 
     def closerm(self):
         if self.index == 'group':
