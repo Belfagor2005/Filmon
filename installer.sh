@@ -2,8 +2,8 @@
 ## setup command=wget -q --no-check-certificate https://raw.githubusercontent.com/Belfagor2005/Filmon/main/installer.sh -O - | /bin/sh
 
 ## Only This 2 lines to edit with new version ######
-version='2.0'
-changelog='\nAdd Live Upgrade\nFix screen'
+version='2.3'
+changelog='\nMajor Fix\nPEP8'
 ##############################################################
 TMPPATH=/tmp/Filmon-main
 FILEPATH=/tmp/main.tar.gz
