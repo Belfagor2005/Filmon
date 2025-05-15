@@ -2,6 +2,10 @@ Filmon from Albatros modded by Lululla
 
 <img src="https://github.com/Belfagor2005/Filmon/blob/main/usr/lib/enigma2/python/Plugins/Extensions/Filmon/plugin.png">
 
+[![Python package](https://github.com/Belfagor2005/Filmon/actions/workflows/pylint.yml/badge.svg)](https://github.com/Belfagor2005/Filmon/actions/workflows/pylint.yml)
+
+![](https://komarev.com/ghpvc/?username=Belfagor2005)
+
 Enigma2 project
 Only Free Channels ( no Pay Tv ) 
 Filmon free link stream (no pay)
