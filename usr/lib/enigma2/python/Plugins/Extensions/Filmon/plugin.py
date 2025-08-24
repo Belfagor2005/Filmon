@@ -112,7 +112,8 @@ PY3 = version_info[0] == 3
 
 config.plugins.filmon = ConfigSubsection()
 config.plugins.filmon.token_refresh = ConfigYesNo(default=True)
-config.plugins.filmon.token_refresh_interval = ConfigInteger(default=45, limits=(30, 300))
+config.plugins.filmon.token_refresh_interval = ConfigInteger(
+    default=45, limits=(30, 300))
 
 if PY3:
     from urllib.parse import urlparse
@@ -285,7 +286,11 @@ def get_session():
 
 class FilmonSettings(Setup):
     def __init__(self, session, parent=None):
-        Setup.__init__(self, session, setup="FilmonSettings", plugin="Extensions/Filmon")
+        Setup.__init__(
+            self,
+            session,
+            setup="FilmonSettings",
+            plugin="Extensions/Filmon")
         self.parent = parent
 
     def keySave(self):
@@ -717,17 +722,19 @@ class filmon(Screen):
                             pixmap_url,
                             TMP_IMAGE,
                             sni_factory,
-                            timeout=5
-                        ).addCallback(self.downloadPic, TMP_IMAGE).addErrback(self.downloadError)
-                                                  
-                                               
+                            timeout=5).addCallback(
+                            self.downloadPic,
+                            TMP_IMAGE).addErrback(
+                            self.downloadError)
+
                     else:
-                        downloadPage(pixmap_url, TMP_IMAGE).addCallback(self.downloadPic, TMP_IMAGE).addErrback(self.downloadError)
-                                       
-                                                   
-                                             
-                                                  
-                                               
+                        downloadPage(
+                            pixmap_url,
+                            TMP_IMAGE).addCallback(
+                            self.downloadPic,
+                            TMP_IMAGE).addErrback(
+                            self.downloadError)
+
                 except Exception as ex:
                     print("Error: can't find file or read data", ex)
 
@@ -757,8 +764,8 @@ class filmon(Screen):
         self.picload = ePicLoad()
         scale = AVSwitch().getFramebufferScale()
 
-                             
-        self.picload.setPara([size.width(), size.height(), scale[0], scale[1], 0, 1, '#00000000'])
+        self.picload.setPara(
+            [size.width(), size.height(), scale[0], scale[1], 0, 1, '#00000000'])
 
         if exists('/var/lib/dpkg/status'):
             self.picload.startDecode(png_path, False)
@@ -845,10 +852,11 @@ class TvInfoBarShowHide():
 
         self["helpOverlay"] = self.helpOverlay
         self["helpOverlay"].hide()
-        
+
         self.hideTimer = eTimer()
         try:
-            self.hideTimer_conn = self.hideTimer.timeout.connect(self.doTimerHide)
+            self.hideTimer_conn = self.hideTimer.timeout.connect(
+                self.doTimerHide)
         except BaseException:
             self.hideTimer.callback.append(self.doTimerHide)
         self.hideTimer.start(3000, True)  # Ridotto a 3 secondi come in Vavoo
@@ -958,32 +966,33 @@ class Playstream2(
     ALLOW_SUSPEND = True
     screen_timeout = 5000
 
-    def __init__(self, session, name, url, channelID, stream_type, index, currentList):
-                 
-                    
-                 
-                
-                      
-                        
-                  
-                         
+    def __init__(
+            self,
+            session,
+            name,
+            url,
+            channelID,
+            stream_type,
+            index,
+            currentList):
+
         Screen.__init__(self, session)
-        
+
         self.session = session
         self.skinName = 'MoviePlayer'
-        
+
         self.currentindex = index
         self.itemscount = len(currentList)
         self.list = currentList
-        
+
         self.name = name
         self.url = url
         self.channelID = channelID
         self.stream_type = stream_type
-        
+
         self.state = self.STATE_PLAYING
         self.servicetype = "4097"
-        
+
         self.retry_count = 0
         self.max_retries = 3
         self.service_handler = None
@@ -1005,18 +1014,20 @@ class Playstream2(
                 iPlayableService.evUser: self.__evUser,
             }
         )
-            
+
         if self.token_refresh_enabled:
             self.refresh_timer = eTimer()
             try:
-                self.refresh_timer_conn = self.refresh_timer.timeout.connect(self.preventive_refresh)
+                self.refresh_timer_conn = self.refresh_timer.timeout.connect(
+                    self.preventive_refresh)
             except BaseException:
                 self.refresh_timer.callback.append(self.preventive_refresh)
             self.refresh_timer.start(self.refresh_interval, True)
-        
+
         self.service_check_timer = eTimer()
         try:
-            self.service_check_timer_conn = self.service_check_timer.timeout.connect(self.check_service_status)
+            self.service_check_timer_conn = self.service_check_timer.timeout.connect(
+                self.check_service_status)
         except BaseException:
             self.service_check_timer.callback.append(self.check_service_status)
         self.service_check_timer.start(10000, True)
@@ -1064,7 +1075,7 @@ class Playstream2(
             ('evEOF', iPlayableService.evEOF),
             ('evUser', iPlayableService.evUser),
         ]
-        
+
         # Add only the events that actually exist
         for name, value in events:
             if hasattr(iPlayableService, name):
@@ -1076,7 +1087,7 @@ class Playstream2(
         """Preventive token refresh"""
         if not self.token_refresh_enabled:
             return
-            
+
         print("Performing preventive token refresh...")
         new_url = self.regenerate_stream_url()
         if new_url:
@@ -1088,7 +1099,7 @@ class Playstream2(
                 self.openTest(self.servicetype, new_url)
             else:
                 print("Service is not playing, cannot update URL.")
-        
+
         # Reschedule timer with configured interval
         if self.token_refresh_enabled:
             self.refresh_interval = config.plugins.filmon.token_refresh_interval.value * 1000
@@ -1106,17 +1117,20 @@ class Playstream2(
 
             self.show()
             self.state = self.STATE_PLAYING
-            
+
             # Restart refresh timer
             if hasattr(self, 'refresh_timer') and self.token_refresh_enabled:
                 self.refresh_timer.start(self.refresh_interval, True)
 
         except Exception as e:
             print("Error in openTest:", str(e))
-            
+
             # Do not call handle_stream_error here to avoid infinite loops
             # Instead, show a message to the user
-            self.session.open(MessageBox, _("Error playing stream"), MessageBox.TYPE_INFO)
+            self.session.open(
+                MessageBox,
+                _("Error playing stream"),
+                MessageBox.TYPE_INFO)
 
     def restart_stream(self, new_url):
         """Restart stream with new URL"""
@@ -1125,25 +1139,20 @@ class Playstream2(
             # Small pause to allow the system to stabilize
             import time
             time.sleep(1)
-            
+
             self.openTest(self.servicetype, new_url)
-            
+
         except Exception as e:
             print("Error restarting stream: " + str(e))
             # If restart fails, wait a bit and retry
             self.timer = eTimer()
             try:
-                self.timer_conn = self.timer.timeout.connect(lambda: self.restart_stream(new_url))
+                self.timer_conn = self.timer.timeout.connect(
+                    lambda: self.restart_stream(new_url))
             except BaseException:
-                self.timer.callback.append(lambda: self.restart_stream(new_url))
+                self.timer.callback.append(
+                    lambda: self.restart_stream(new_url))
             self.timer.start(3000, True)  # Delay of 3 seconds before retry
-       
-                              
-                           
-                                          
-                                     
-                        
-                                                
 
     def up(self):
         pass
@@ -1174,19 +1183,22 @@ class Playstream2(
         self.name = channel_info[0][0]
         channel_id = channel_info[0][1]
 
-        # Get the session key (it's stored in the third element of the first item)
-               
+        # Get the session key (it's stored in the third element of the first
+        # item)
+
         session = channel_info[0][3]
 
         if session and channel_id:
-            url = 'https://eu-api.filmon.com/api/channel/' + str(channel_id) + "?session_key=" + session
-                                                           
+            url = 'https://eu-api.filmon.com/api/channel/' + \
+                str(channel_id) + "?session_key=" + session
+
             self.get_rtmp_update(url, channel_id)
 
     def get_rtmp_update(self, data, channelID):
         try:
-            # Same logic as in the main get_rtmp method but for updating the current stream
-                            
+            # Same logic as in the main get_rtmp method but for updating the
+            # current stream
+
             referer = 'http://www.filmon.com'
             headers = {
                 'User-Agent': USER_AGENT,
@@ -1242,7 +1254,10 @@ class Playstream2(
         service = self.session.nav.getCurrentService()
         if service:
             info = service.info()
-            print("Service info:", info.getInfoString(iServiceInformation.sServiceref))
+            print(
+                "Service info:",
+                info.getInfoString(
+                    iServiceInformation.sServiceref))
 
     def __evEOF(self):
         """End of stream reached"""
@@ -1270,7 +1285,7 @@ class Playstream2(
             print("Service is None, attempting to reconnect...")
             self.handle_stream_error()
             return
-        
+
         # Check if the service is still valid
         ref = self.session.nav.getCurrentlyPlayingServiceReference()
         if ref and ref.getPath():
@@ -1289,13 +1304,13 @@ class Playstream2(
         if self.retry_count < self.max_retries:
             self.retry_count += 1
             print("Attempting reconnect {}/{}".format(self.retry_count, self.max_retries))
-            
+
             # Temporarily stop all timers
             if hasattr(self, 'refresh_timer') and self.token_refresh_enabled:
                 self.refresh_timer.stop()
             if hasattr(self, 'service_check_timer'):
                 self.service_check_timer.stop()
-            
+
             # Regenerate URL and restart
             new_url = self.regenerate_stream_url()
             if new_url:
@@ -1303,10 +1318,16 @@ class Playstream2(
                 # Use a direct call instead of a timer to avoid delays
                 self.restart_stream(new_url)
             else:
-                self.session.open(MessageBox, _("Cannot regenerate stream URL"), MessageBox.TYPE_ERROR)
+                self.session.open(
+                    MessageBox,
+                    _("Cannot regenerate stream URL"),
+                    MessageBox.TYPE_ERROR)
                 self.close()
         else:
-            self.session.open(MessageBox, _("Maximum reconnection attempts reached"), MessageBox.TYPE_ERROR)
+            self.session.open(
+                MessageBox,
+                _("Maximum reconnection attempts reached"),
+                MessageBox.TYPE_ERROR)
             self.close()
 
     def doEofInternal(self, playing):
@@ -1315,8 +1336,9 @@ class Playstream2(
             print("Tentativo di riconnessione", self.retry_count)
             self.retry_timer = eTimer()
             try:
-                self.retry_timer_conn = self.retry_timer.timeout.connect(self.retry_playback)
-                                        
+                self.retry_timer_conn = self.retry_timer.timeout.connect(
+                    self.retry_playback)
+
             except AttributeError:
                 self.retry_timer.callback.append(self.retry_playback)
             self.retry_timer.start(2000, True)
@@ -1324,24 +1346,12 @@ class Playstream2(
             self.close()
 
     def retry_playback(self):
-            
+
         new_url = self.regenerate_stream_url()
         if new_url:
             self.session.nav.stopService()
             self.openTest(self.servicetype, new_url)
-       
-                                               
-                                 
-                                                                 
 
-                                       
-                
-                                                                         
-                                  
-                                  
-                                                               
-                                              
-                                                
         else:
             self.close()
 
@@ -1359,7 +1369,8 @@ class Playstream2(
             if not session:
                 return None
 
-            api_url = 'https://eu-api.filmon.com/api/channel/{0}?session_key={1}'.format(self.channelID, session)
+            api_url = 'https://eu-api.filmon.com/api/channel/{0}?session_key={1}'.format(
+                self.channelID, session)
             headers = {
                 'User-Agent': USER_AGENT,
                 'Referer': 'http://www.filmon.com',
@@ -1374,14 +1385,14 @@ class Playstream2(
 
             data = json_loads(content)
             streams = data.get('streams', [])
-            
+
             # First, try to find a valid HLS stream
             for stream in streams:
                 stream_url = stream.get('url', '')
                 if '.m3u8' in stream_url and 'id=' in stream_url:
                     clean_url = stream_url.replace('\\', '')
                     return clean_url
-            
+
             # Fallback: build URL manually
             token = None
             for stream in streams:
@@ -1393,11 +1404,12 @@ class Playstream2(
             if token:
                 base_url = "http://edge{0}.filmon.com/live/{1}.{2}.stream/playlist.m3u8?id={3}"
                 edge_server = random.randint(1300, 1400)
-                                       
-                return base_url.format(edge_server, self.channelID, 'high', token)
+
+                return base_url.format(
+                    edge_server, self.channelID, 'high', token)
         except Exception as e:
             print("Error regenerating stream: " + str(e))
-        
+
         return None
 
     def playpauseService(self):
@@ -1513,16 +1525,16 @@ class Playstream2(
     def cancel(self, *args):
         if hasattr(self, 'refresh_timer') and self.token_refresh_enabled:
             self.refresh_timer.stop()
-        
+
         if hasattr(self, 'timer'):
             self.timer.stop()
-        
+
         if hasattr(self, 'service_check_timer'):
             self.service_check_timer.stop()
-        
+
         if exists('/tmp/hls.avi'):
             remove('/tmp/hls.avi')
-        
+
         self.session.nav.stopService()
         if self.srefInit:
             self.session.nav.playService(self.srefInit)
@@ -1574,11 +1586,7 @@ class FilmonInfo(Screen):
         lines = self.help_text.split('\n')
         if self.scroll_pos >= len(lines):
             self.scroll_pos = 0
-            
-            
-       
 
-                                                
         display_text = '\n'.join(lines[self.scroll_pos:self.scroll_pos + 20])
         self['text'].setText(display_text)
 
@@ -1609,69 +1617,10 @@ class FilmonInfo(Screen):
             "",
             "Enjoy Filmon streaming!"
         ])
-        
+
         self.updateText()
 
 
-            
-       
-                          
-                                
-                              
-                        
-                                                           
-                                
-
-                                      
-
-                                                       
-                                 
-                                   
-                                   
-
-                                                          
-                             
-                                
-              
-
-                                                     
-
-                           
-                       
-
-                       
-                      
-                            
-                                       
-                                  
-                                        
-               
-                        
-                                       
-                                                         
-                                      
-                                      
-                               
-                                         
-               
-                       
-                                                 
-               
-                     
-                                                   
-                                    
-               
-                                     
-         
-
-                       
-                               
-                                      
-
-                                        
-
-
-                                                
 def main(session, **kwargs):
     try:
         session.open(filmon)
@@ -1687,25 +1636,27 @@ def setup(session, **kwargs):
 
 def Plugins(**kwargs):
     icona = 'plugin.png'
-            
-    extDescriptor = PluginDescriptor(name='Filmon Player', description=DESC_PLUGIN, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=icona, fnc=main)
-    setupDescriptor = PluginDescriptor(name='Filmon Setup', description="Configure Filmon settings", where=PluginDescriptor.WHERE_PLUGINMENU, icon=icona, fnc=setup)
-    result = [PluginDescriptor(name=TITLE_PLUG, description=DESC_PLUGIN, where=PluginDescriptor.WHERE_PLUGINMENU, icon=icona, fnc=main)]
-       
-                                     
-                             
-                                
-                                                    
-                   
-                 
-              
-                         
-                            
-                                    
-                                                    
-                       
-                      
-                                                
+
+    extDescriptor = PluginDescriptor(
+        name='Filmon Player',
+        description=DESC_PLUGIN,
+        where=PluginDescriptor.WHERE_EXTENSIONSMENU,
+        icon=icona,
+        fnc=main)
+    setupDescriptor = PluginDescriptor(
+        name='Filmon Setup',
+        description="Configure Filmon settings",
+        where=PluginDescriptor.WHERE_PLUGINMENU,
+        icon=icona,
+        fnc=setup)
+    result = [
+        PluginDescriptor(
+            name=TITLE_PLUG,
+            description=DESC_PLUGIN,
+            where=PluginDescriptor.WHERE_PLUGINMENU,
+            icon=icona,
+            fnc=main)]
+
     result.append(extDescriptor)
     result.append(setupDescriptor)
     return result
