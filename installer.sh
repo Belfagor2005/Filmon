@@ -1,8 +1,8 @@
 #!/bin/bash
 ## setup command=wget -q --no-check-certificate https://raw.githubusercontent.com/Belfagor2005/Filmon/main/installer.sh -O - | /bin/sh
 
-version='2.3'
-changelog='\nMajor Fix\nPEP8'
+version='2.4'
+changelog='\nMANY CHANGE\nRecoded all code'
 TMPPATH=/tmp/Filmon-main
 FILEPATH=/tmp/filmon.tar.gz
 

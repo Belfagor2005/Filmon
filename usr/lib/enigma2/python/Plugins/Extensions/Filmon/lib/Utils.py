@@ -532,6 +532,7 @@ def getLanguage():
 
 def downloadFile(url, target):
     import socket
+    response = None
     try:
         from urllib.error import HTTPError, URLError
     except BaseException:
@@ -560,6 +561,7 @@ def downloadFile(url, target):
 
 def downloadFilest(url, target):
     try:
+        response = None
         req = Request(url)
         req.add_header(
             'User-Agent',
@@ -583,8 +585,7 @@ def defaultMoviePath():
     result = config.usage.default_path.value
     if not isdir(result):
         from Tools import Directories
-        return Directories.defaultRecordingLocation(
-            config.usage.default_path.value)
+        return Directories.defaultRecordingLocation(config.usage.default_path.value)
     return result
 
 
@@ -597,8 +598,7 @@ if not isdir(config.movielist.last_videodir.value):
 downloadm3u = config.movielist.last_videodir.value
 
 
-# this def returns the current playing service name and stream_url from
-# give sref
+# this def returns the current playing service name and stream_url from give sref
 def getserviceinfo(service_ref):
     """Get service name and URL from service reference"""
     try:
@@ -669,6 +669,7 @@ def checkInternet():
 
 def check(url):
     import socket
+    response = None
     try:
         from urllib.error import HTTPError, URLError
     except BaseException:
@@ -1089,6 +1090,7 @@ def RequestAgent():
 
 
 def make_request(url):
+    response = None
     try:
         link = url
         import requests
@@ -1232,7 +1234,31 @@ def ReadUrl(url):
     return link
 
 
+def getUrlSiVer(url, verify=True):
+    """Fetch URL content with optional SSL verification"""
+    try:
+        headers = {'User-Agent': RequestAgent()}
+        response = requests.get(url, headers=headers, timeout=10, verify=verify)
+        response.raise_for_status()
+        return response.text
+    except Exception as e:
+        print("Error fetching URL " + str(url) + ": " + str(e))
+        return None
+
+
+def getUrlNoVer(url, verify=True):
+    try:
+        headers = {'User-Agent': RequestAgent()}
+        response = requests.get(url, headers=headers, timeout=10, verify=verify)
+        response.raise_for_status()
+        return response.text
+    except Exception as e:
+        print("Error fetching URL {}: {}".format(url, str(e)))
+        return None
+
+
 def getUrl(url):
+    response = None
     req = Request(url)
     req.add_header('User-Agent', RequestAgent())
     link = url
@@ -1264,6 +1290,7 @@ def getUrl(url):
 
 
 def getUrl2(url, referer):
+    response = None
     link = url
     req = Request(url)
     req.add_header('User-Agent', RequestAgent())
@@ -1282,6 +1309,7 @@ def getUrl2(url, referer):
 
 
 def getUrlresp(url):
+    response = None
     req = Request(url)
     req.add_header('User-Agent', RequestAgent())
     try:
@@ -1592,15 +1620,29 @@ def cachedel(folder):
 
 def cleanName(name):
     non_allowed_characters = "/.\\:*?<>|\""
-    name = unicodedata.normalize(
-        "NFKD", name).encode(
-        "ASCII", "ignore").decode("ASCII")
-    name = name.replace('\xc2\x86', '').replace('\xc2\x87', '')
-    name = name.replace(' ', '-').replace("'", '').replace('&', 'e')
-    name = name.replace('(', '').replace(')', '')
-    name = name.strip()
-    name = ''.join(
-        ['_' if c in non_allowed_characters or ord(c) < 32 else c for c in name])
+    try:
+        if not isinstance(name, (str, bytes)):
+            name = str(name)
+
+        if sys.version_info[0] < 3:
+            if not isinstance(name, unicode):
+                name = unicode(name, "utf-8")
+        else:
+            if isinstance(name, bytes):
+                name = name.decode("utf-8", "ignore")
+
+        name = unicodedata.normalize(
+            "NFKD", name).encode(
+            "ASCII", "ignore").decode("ASCII")
+        name = name.replace('\xc2\x86', '').replace('\xc2\x87', '')
+        name = name.replace(' ', '-').replace("'", '').replace('&', 'e')
+        name = name.replace('(', '').replace(')', '')
+        name = name.strip()
+        name = ''.join(
+            ['_' if c in non_allowed_characters or ord(c) < 32 else c for c in name])
+    except Exception as e:
+        print("Error in cleanName: " + str(e))
+        name = "noname"
     return name
 
 
@@ -1649,346 +1691,28 @@ def remove_line(filename, pattern):
 def badcar(name):
     name = name
     bad_chars = [
-        "sd",
-        "hd",
-        "fhd",
-        "uhd",
-        "4k",
-        "1080p",
-        "720p",
-        "blueray",
-        "x264",
-        "aac",
-        "ozlem",
-        "hindi",
-        "hdrip",
-        "(cache)",
-        "(kids)",
-        "[3d-en]",
-        "[iran-dubbed]",
-        "imdb",
-        "top250",
-        "multi-audio",
-        "multi-subs",
-        "multi-sub",
-        "[audio-pt]",
-        "[nordic-subbed]",
-        "[nordic-subbeb]",
-        "SD",
-        "HD",
-        "FHD",
-        "UHD",
-        "4K",
-        "1080P",
-        "720P",
-        "BLUERAY",
-        "X264",
-        "AAC",
-        "OZLEM",
-        "HINDI",
-        "HDRIP",
-        "(CACHE)",
-        "(KIDS)",
-        "[3D-EN]",
-        "[IRAN-DUBBED]",
-        "IMDB",
-        "TOP250",
-        "MULTI-AUDIO",
-        "MULTI-SUBS",
-        "MULTI-SUB",
-        "[AUDIO-PT]",
-        "[NORDIC-SUBBED]",
-        "[NORDIC-SUBBEB]",
-        "-ae-",
-        "-al-",
-        "-ar-",
-        "-at-",
-        "-ba-",
-        "-be-",
-        "-bg-",
-        "-br-",
-        "-cg-",
-        "-ch-",
-        "-cz-",
-        "-da-",
-        "-de-",
-        "-dk-",
-        "-ee-",
-        "-en-",
-        "-es-",
-        "-ex-yu-",
-        "-fi-",
-        "-fr-",
-        "-gr-",
-        "-hr-",
-        "-hu-",
-        "-in-",
-        "-ir-",
-        "-it-",
-        "-lt-",
-        "-mk-",
-        "-mx-",
-        "-nl-",
-        "-no-",
-        "-pl-",
-        "-pt-",
-        "-ro-",
-        "-rs-",
-        "-ru-",
-        "-se-",
-        "-si-",
-        "-sk-",
-        "-tr-",
-        "-uk-",
-        "-us-",
-        "-yu-",
-        "-AE-",
-        "-AL-",
-        "-AR-",
-        "-AT-",
-        "-BA-",
-        "-BE-",
-        "-BG-",
-        "-BR-",
-        "-CG-",
-        "-CH-",
-        "-CZ-",
-        "-DA-",
-        "-DE-",
-        "-DK-",
-        "-EE-",
-        "-EN-",
-        "-ES-",
-        "-EX-YU-",
-        "-FI-",
-        "-FR-",
-        "-GR-",
-        "-HR-",
-        "-HU-",
-        "-IN-",
-        "-IR-",
-        "-IT-",
-        "-LT-",
-        "-MK-",
-        "-MX-",
-        "-NL-",
-        "-NO-",
-        "-PL-",
-        "-PT-",
-        "-RO-",
-        "-RS-",
-        "-RU-",
-        "-SE-",
-        "-SI-",
-        "-SK-",
-        "-TR-",
-        "-UK-",
-        "-US-",
-        "-YU-",
-        "|ae|",
-        "|al|",
-        "|ar|",
-        "|at|",
-        "|ba|",
-        "|be|",
-        "|bg|",
-        "|br|",
-        "|cg|",
-        "|ch|",
-        "|cz|",
-        "|da|",
-        "|de|",
-        "|dk|",
-        "|ee|",
-        "|en|",
-        "|es|",
-        "|ex-yu|",
-        "|fi|",
-        "|fr|",
-        "|gr|",
-        "|hr|",
-        "|hu|",
-        "|in|",
-        "|ir|",
-        "|it|",
-        "|lt|",
-        "|mk|",
-        "|mx|",
-        "|nl|",
-        "|no|",
-        "|pl|",
-        "|pt|",
-        "|ro|",
-        "|rs|",
-        "|ru|",
-        "|se|",
-        "|si|",
-        "|sk|",
-        "|tr|",
-        "|uk|",
-        "|us|",
-        "|yu|",
-        "|AE|",
-        "|AL|",
-        "|AR|",
-        "|AT|",
-        "|BA|",
-        "|BE|",
-        "|BG|",
-        "|BR|",
-        "|CG|",
-        "|CH|",
-        "|CZ|",
-        "|DA|",
-        "|DE|",
-        "|DK|",
-        "|EE|",
-        "|EN|",
-        "|ES|",
-        "|EX-YU|",
-        "|FI|",
-        "|FR|",
-        "|GR|",
-        "|HR|",
-        "|HU|",
-        "|IN|",
-        "|IR|",
-        "|IT|",
-        "|LT|",
-        "|MK|",
-        "|MX|",
-        "|NL|",
-        "|NO|",
-        "|PL|",
-        "|PT|",
-        "|RO|",
-        "|RS|",
-        "|RU|",
-        "|SE|",
-        "|SI|",
-        "|SK|",
-        "|TR|",
-        "|UK|",
-        "|US|",
-        "|YU|",
-        "|Ae|",
-        "|Al|",
-        "|Ar|",
-        "|At|",
-        "|Ba|",
-        "|Be|",
-        "|Bg|",
-        "|Br|",
-        "|Cg|",
-        "|Ch|",
-        "|Cz|",
-        "|Da|",
-        "|De|",
-        "|Dk|",
-        "|Ee|",
-        "|En|",
-        "|Es|",
-        "|Ex-Yu|",
-        "|Fi|",
-        "|Fr|",
-        "|Gr|",
-        "|Hr|",
-        "|Hu|",
-        "|In|",
-        "|Ir|",
-        "|It|",
-        "|Lt|",
-        "|Mk|",
-        "|Mx|",
-        "|Nl|",
-        "|No|",
-        "|Pl|",
-        "|Pt|",
-        "|Ro|",
-        "|Rs|",
-        "|Ru|",
-        "|Se|",
-        "|Si|",
-        "|Sk|",
-        "|Tr|",
-        "|Uk|",
-        "|Us|",
-        "|Yu|",
-        "(",
-        ")",
-        "[",
-        "]",
-        "u-",
-        "3d",
-        "'",
-        "#",
-        "/",
-        "-",
-        "_",
-        ".",
-        "+",
-        "PF1",
-        "PF2",
-        "PF3",
-        "PF4",
-        "PF5",
-        "PF6",
-        "PF7",
-        "PF8",
-        "PF9",
-        "PF10",
-        "PF11",
-        "PF12",
-        "PF13",
-        "PF14",
-        "PF15",
-        "PF16",
-        "PF17",
-        "PF18",
-        "PF19",
-        "PF20",
-        "PF21",
-        "PF22",
-        "PF23",
-        "PF24",
-        "PF25",
-        "PF26",
-        "PF27",
-        "PF28",
-        "PF29",
-        "PF30",
-        "480p",
-        "ANIMAZIONE",
-        "AVVENTURA",
-        "BIOGRAFICO",
-        "BDRip",
-        "BluRay",
-        "CINEMA",
-        "COMMEDIA",
-        "DOCUMENTARIO",
-        "DRAMMATICO",
-        "FANTASCIENZA",
-        "FANTASY",
-        "HDCAM",
-        "HDTC",
-        "HDTS",
-        "LD",
-        "MARVEL",
-        "MD",
-        "NEW_AUDIO",
-        "R3",
-        "R6",
-        "SENTIMENTALE",
-        "TC",
-        "TELECINE",
-        "TELESYNC",
-        "THRILLER",
-        "Uncensored",
-        "V2",
-        "WEBDL",
-        "WEBRip",
-        "WEB",
-        "WESTERN"]
+        "sd", "hd", "fhd", "uhd", "4k", "1080p", "720p", "blueray", "x264", "aac", "ozlem", "hindi", "hdrip", "(cache)", "(kids)", "[3d-en]", "[iran-dubbed]", "imdb", "top250", "multi-audio",
+        "multi-subs", "multi-sub", "[audio-pt]", "[nordic-subbed]", "[nordic-subbeb]",
+        "SD", "HD", "FHD", "UHD", "4K", "1080P", "720P", "BLUERAY", "X264", "AAC", "OZLEM", "HINDI", "HDRIP", "(CACHE)", "(KIDS)", "[3D-EN]", "[IRAN-DUBBED]", "IMDB", "TOP250", "MULTI-AUDIO",
+        "MULTI-SUBS", "MULTI-SUB", "[AUDIO-PT]", "[NORDIC-SUBBED]", "[NORDIC-SUBBEB]",
+        "-ae-", "-al-", "-ar-", "-at-", "-ba-", "-be-", "-bg-", "-br-", "-cg-", "-ch-", "-cz-", "-da-", "-de-", "-dk-", "-ee-", "-en-", "-es-", "-ex-yu-", "-fi-", "-fr-", "-gr-", "-hr-", "-hu-",
+        "-in-", "-ir-", "-it-", "-lt-", "-mk-", "-mx-", "-nl-", "-no-", "-pl-", "-pt-", "-ro-", "-rs-", "-ru-", "-se-", "-si-", "-sk-", "-tr-", "-uk-", "-us-", "-yu-",
+        "-AE-", "-AL-", "-AR-", "-AT-", "-BA-", "-BE-", "-BG-", "-BR-", "-CG-", "-CH-", "-CZ-", "-DA-", "-DE-", "-DK-", "-EE-", "-EN-", "-ES-", "-EX-YU-", "-FI-", "-FR-", "-GR-", "-HR-", "-HU-",
+        "-IN-", "-IR-", "-IT-", "-LT-", "-MK-", "-MX-", "-NL-", "-NO-", "-PL-", "-PT-", "-RO-", "-RS-", "-RU-", "-SE-", "-SI-", "-SK-", "-TR-", "-UK-", "-US-", "-YU-",
+        "|ae|", "|al|", "|ar|", "|at|", "|ba|", "|be|", "|bg|", "|br|", "|cg|", "|ch|", "|cz|", "|da|", "|de|", "|dk|", "|ee|", "|en|", "|es|", "|ex-yu|", "|fi|", "|fr|", "|gr|", "|hr|", "|hu|",
+        "|in|", "|ir|", "|it|", "|lt|", "|mk|", "|mx|", "|nl|", "|no|", "|pl|", "|pt|", "|ro|", "|rs|", "|ru|", "|se|", "|si|", "|sk|", "|tr|", "|uk|", "|us|", "|yu|",
+        "|AE|", "|AL|", "|AR|", "|AT|", "|BA|", "|BE|", "|BG|", "|BR|", "|CG|", "|CH|", "|CZ|", "|DA|", "|DE|", "|DK|", "|EE|", "|EN|", "|ES|", "|EX-YU|", "|FI|", "|FR|", "|GR|", "|HR|", "|HU|",
+        "|IN|", "|IR|", "|IT|", "|LT|", "|MK|", "|MX|", "|NL|", "|NO|", "|PL|", "|PT|", "|RO|", "|RS|", "|RU|", "|SE|", "|SI|", "|SK|", "|TR|", "|UK|", "|US|", "|YU|",
+        "|Ae|", "|Al|", "|Ar|", "|At|", "|Ba|", "|Be|", "|Bg|", "|Br|", "|Cg|", "|Ch|", "|Cz|", "|Da|", "|De|", "|Dk|", "|Ee|", "|En|", "|Es|", "|Ex-Yu|", "|Fi|", "|Fr|", "|Gr|", "|Hr|", "|Hu|",
+        "|In|", "|Ir|", "|It|", "|Lt|", "|Mk|", "|Mx|", "|Nl|", "|No|", "|Pl|", "|Pt|", "|Ro|", "|Rs|", "|Ru|", "|Se|", "|Si|", "|Sk|", "|Tr|", "|Uk|", "|Us|", "|Yu|",
+        "(", ")", "[", "]", "u-", "3d", "'", "#", "/", "-", "_", ".", "+",
+        "PF1", "PF2", "PF3", "PF4", "PF5", "PF6", "PF7", "PF8", "PF9", "PF10", "PF11", "PF12", "PF13", "PF14", "PF15", "PF16", "PF17", "PF18", "PF19", "PF20",
+        "PF21", "PF22", "PF23", "PF24", "PF25", "PF26", "PF27", "PF28", "PF29", "PF30",
+        "480p", "ANIMAZIONE", "AVVENTURA", "BIOGRAFICO", "BDRip", "BluRay", "CINEMA", "COMMEDIA",
+        "DOCUMENTARIO", "DRAMMATICO", "FANTASCIENZA", "FANTASY", "HDCAM", "HDTC", "HDTS", "LD",
+        "MARVEL", "MD", "NEW_AUDIO", "R3", "R6", "SENTIMENTALE", "TC", "TELECINE", "TELESYNC",
+        "THRILLER", "Uncensored", "V2", "WEBDL", "WEBRip", "WEB", "WESTERN"
+    ]
 
     for j in range(1900, 2025):
         bad_chars.append(str(j))
@@ -2003,7 +1727,7 @@ def get_title(title):
         return
     # try:
         # title = title.encode('utf-8')
-    # except:
+    # except BaseException:
         # pass
     title = re.sub(r'&#(\d+);', '', title)
     title = re.sub(r'(&#[0-9]+)([^;^0-9]+)', '\\1;\\2', title)

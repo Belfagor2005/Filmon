@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Filmon\n"
-"POT-Creation-Date: 2025-01-25 22:20+0100\n"
+"POT-Creation-Date: 2025-08-24 21:26+0200\n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -9,60 +9,50 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=iso-8859-1\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.5\n"
+"X-Generator: Poedit 3.6\n"
 "X-Poedit-Basepath: ../../..\n"
 "X-Poedit-SearchPath-0: plugin.py\n"
 
-#: plugin.py:278
+#: plugin.py:287
 msgid "Exit"
-msgstr ""
+msgstr "Esci"
 
-#: plugin.py:279
-msgid "Update"
-msgstr ""
-
-#: plugin.py:349
-#, python-format
-msgid "Error checking version: %s"
-msgstr ""
-
-#: plugin.py:358
-#, python-format
-msgid ""
-"New version %s is available\n"
-"\n"
-"Changelog: %s\n"
-"\n"
-"Press info_long or yellow_long button to start force updating."
-msgstr ""
-
-#: plugin.py:365
-#, python-format
-msgid ""
-"New version %s is available.\n"
-"\n"
-"Changelog: %s \n"
-"\n"
-"Do you want to install it now?"
-msgstr ""
-
-#: plugin.py:367
-msgid "Congrats! You already have the latest version..."
-msgstr ""
-
-#: plugin.py:377
-#, python-format
-msgid "Do you want to install update ( %s ) now?"
-msgstr ""
-
-#: plugin.py:386
-msgid "Update Aborted!"
-msgstr ""
-
-#: plugin.py:435
+#: plugin.py:363
 msgid "Try again later ..."
+msgstr "Prova più tardi ..."
+
+#: plugin.py:428
+msgid "Session error, try again later ..."
+msgstr "Errore di sessione, riprova più tardi..."
+
+#: plugin.py:496
+msgid "Error loading channels"
+msgstr "Errore durante il caricamento dei canali"
+
+#: plugin.py:564 plugin.py:717
+msgid "Select stream quality"
+msgstr "Seleziona la qualità dello streaming"
+
+#: plugin.py:604
+msgid "Could not get stream token"
+msgstr "Impossibile ottenere il token di streaming"
+
+#: plugin.py:723
+msgid "Cancel"
+msgstr "Annulla"
+
+#: plugin.py:724
+msgid "OK"
 msgstr ""
 
-#: plugin.py:898
-msgid "Resolution Change Failed"
-msgstr ""
+#: plugin.py:989
+msgid "Error playing stream"
+msgstr "Errore durante la riproduzione dello streaming"
+
+#: plugin.py:1196
+msgid "Play/pause not supported for this stream"
+msgstr "Riproduzione/pausa non supportata per questo flusso"
+
+#: plugin.py:1246 plugin.py:1319
+msgid "WELCOME TO FILMON PLUGIN BY LULULLA"
+msgstr "BENVENUTI AL PLUGIN FILMON DI LULULLA"

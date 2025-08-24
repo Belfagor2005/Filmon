@@ -7,7 +7,7 @@
     <convert type="ClockToText">Default</convert>
   </widget>
   <eLabel backgroundColor="#30000000" position="0,0" size="2560,1440" transparent="0" zPosition="-9" foregroundColor="#00ffffff" />
-  <ePixmap pixmap="/usr/lib/enigma2/python/Plugins/Extensions/Filmon/skin/images_new/main.png" position="0,0" size="2560,1440" alphatest="blend" zPosition="-8" />
+  <ePixmap pixmap="/usr/lib/enigma2/python/Plugins/Extensions/Filmon/skin/images_new/main.png" scale="1" position="0,0" size="2560,1440" alphatest="blend" zPosition="-8" />
 
   <eLabel backgroundColor="red" position="78,1386" size="300,6" zPosition="10" />
   <eLabel backgroundColor="yellow" position="832,1386" size="300,6" zPosition="10" />

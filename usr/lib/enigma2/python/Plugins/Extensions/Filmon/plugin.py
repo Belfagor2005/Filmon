@@ -1,26 +1,44 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
-'''
-****************************************
-*        coded by Lululla              *
-*             skin by MMark            *
-*             28/08/2023               *
-*       Skin by MMark                  *
-****************************************
-#--------------------#
-#Info http://t.me/tivustream
-'''
 from __future__ import print_function
-# Standard library imports
-import codecs
+
+"""
+#########################################################
+#                                                       #
+#  Filmon Plugin                                        #
+#  Version: 2.4                                         #
+#  Created by Lululla                                   #
+#  License: GPL-3.0-or-later                            #
+#  https://www.gnu.org/licenses/gpl-3.0.html            #
+#  Last Modified: 15:14 - 2025-08-24                    #
+#                                                       #
+#  Features:                                            #
+#    - Access Filmon content                            #
+#    - Browse categories, programs, and videos          #
+#    - Play streaming video                             #
+#    - JSON API integration                             #
+#    - Debug logging                                    #
+#    - User-friendly interface                          #
+#                                                       #
+#  Credits:                                             #
+#    - Original development by Lululla                  #
+#                                                       #
+#  Usage of this code without proper attribution        #
+#  is strictly prohibited.                              #
+#  For modifications and redistribution,                #
+#  please maintain this credit header.                  #
+#########################################################
+"""
+__author__ = "Lululla"
+
 from json import loads as json_loads
 from os import makedirs, remove
 from os.path import exists, join
 from re import compile, DOTALL, findall
 from shutil import copy
-from datetime import datetime
 from sys import version_info
+import random
+import codecs
 
 # Third-party imports
 import six
@@ -46,11 +64,13 @@ try:
 except ImportError:
     from Components.AVSwitch import eAVControl as AVSwitch
 from Components.ActionMap import ActionMap
+from Components.config import config
 from Components.Label import Label
 from Components.MenuList import MenuList
 from Components.MultiContent import MultiContentEntryPixmapAlphaTest, MultiContentEntryText
 from Components.Pixmap import Pixmap
 from Components.ServiceEventTracker import InfoBarBase, ServiceEventTracker
+from Components.ScrollLabel import ScrollLabel
 
 # Enigma2 screen imports
 from Screens.InfoBarGenerics import (
@@ -58,6 +78,7 @@ from Screens.InfoBarGenerics import (
     InfoBarMenu,
     InfoBarNotifications,
     InfoBarSeek,
+    InfoBarSubtitleSupport
 )
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
@@ -65,54 +86,46 @@ from Screens.Screen import Screen
 # Enigma2 tools imports
 from Tools.Directories import SCOPE_PLUGINS, resolveFilename
 
+from six.moves.urllib.request import Request, urlopen
+from urllib3.exceptions import InsecureRequestWarning
+from urllib3 import disable_warnings
+
 # Plugin imports
 from Plugins.Plugin import PluginDescriptor
 
 # Local module imports
 from . import _
 from .lib import Utils
-from .lib import html_conv
-from .lib.Console import Console as xConsole
+from .lib.html_conv import html_unescape
 
-global skin_path
-
+# global skin_path
+CURR_VERSION = '2.4'
+PLUGIN_PATH = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('Filmon'))
+TITLE_PLUG = 'Filmon Player'
+DESC_PLUGIN = '..:: Live Filmon by Lululla %s ::.. ' % CURR_VERSION
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36"
+TMP_IMAGE = '/tmp/filmon/poster.png'
+aspect_manager = Utils.AspectManager()
+disable_warnings(InsecureRequestWarning)
 PY3 = version_info[0] == 3
 
 if PY3:
     from urllib.parse import urlparse
-    from urllib.request import urlopen, Request
-    from urllib.error import URLError, HTTPError
     unicode = str
-    xrange = range
-    unichr = chr
-    long = int
 else:
-    from urllib2 import urlopen, Request
-    from urllib2 import URLError, HTTPError
     from urlparse import urlparse
     str = unicode
-    unicode = unicode
-    xrange = xrange
     try:
         import ssl
         sslContext = ssl._create_unverified_context()
-    except BaseException:
+    except ImportError:
         sslContext = None
-
-currversion = '2.3'
-cj = {}
-PLUGIN_PATH = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('Filmon'))
-title_plug = 'Filmon Player'
-desc_plugin = '..:: Live Filmon by Lululla %s ::.. ' % currversion
-installer_url = 'aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL0JlbGZhZ29yMjAwNS9GaWxtb24vbWFpbi9pbnN0YWxsZXIuc2g='
-developer_url = 'aHR0cHM6Ly9hcGkuZ2l0aHViLmNvbS9yZXBvcy9CZWxmYWdvcjIwMDUvRmlsbW9u'
-aspect_manager = Utils.AspectManager()
 
 try:
     from twisted.internet import ssl
     from twisted.internet._sslverify import ClientTLSOptions
     sslverify = True
-except BaseException:
+except:
     sslverify = False
 
 if sslverify:
@@ -126,17 +139,12 @@ if sslverify:
                 ClientTLSOptions(self.hostname, ctx)
             return ctx
 
-
-# Define the path for the tmp image
-tmp_image = '/tmp/filmon/poster.png'
-
 # Check if the directory exists, if not, create it
 if not exists('/tmp/filmon/'):
     makedirs('/tmp/filmon/')
 else:
     print('/tmp/filmon/ already present')
 
-# Copy the image files to the desired location
 try:
     copy(join(PLUGIN_PATH, 'noposter.png'), '/tmp/filmon/poster.png')
     copy(join(PLUGIN_PATH, 'noposter.jpg'), '/tmp/filmon/poster.jpg')
@@ -144,94 +152,22 @@ except Exception as e:
     print("Error copying files: {}".format(e))
 
 
-class m2list(MenuList):
-
-    def __init__(self, list):
-        MenuList.__init__(self, list, True, eListboxPythonMultiContent)
-        screen_width = screenwidth.width()  # Save the screen width in a variable
-        if screen_width == 2560:
-            self.l.setItemHeight(70)
-            textfont = int(42)
-            self.l.setFont(0, gFont('Regular', textfont))
-        elif screen_width == 1920:
-            self.l.setItemHeight(60)
-            textfont = int(30)
-            self.l.setFont(0, gFont('Regular', textfont))
-        else:
-            self.l.setItemHeight(35)
-            textfont = int(24)
-            self.l.setFont(0, gFont('Regular', textfont))
+def isStreamlinkAvailable():
+    try:
+        from os import popen
+        popen('streamlink --version')
+        return True
+    except:
+        return False
 
 
-def show_(name, link, img, session, description):
-    res = [(name, link, img, session, description)]
-    page1 = join(PLUGIN_PATH, 'skin/images_new/50x50.png')
-
-    screen_width = screenwidth.width()  # Save the screen width in a variable
-
-    if screen_width == 2560:
-        res.append(
-            MultiContentEntryPixmapAlphaTest(
-                pos=(
-                    5, 5), size=(
-                    60, 60), png=loadPNG(page1)))
-        res.append(
-            MultiContentEntryText(
-                pos=(
-                    110,
-                    0),
-                size=(
-                    1200,
-                    50),
-                font=0,
-                text=name,
-                color=0xa6d1fe,
-                flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
-    elif screen_width == 1920:
-        res.append(
-            MultiContentEntryPixmapAlphaTest(
-                pos=(
-                    5, 5), size=(
-                    50, 50), png=loadPNG(page1)))
-        res.append(
-            MultiContentEntryText(
-                pos=(
-                    90,
-                    0),
-                size=(
-                    1000,
-                    50),
-                font=0,
-                text=name,
-                color=0xa6d1fe,
-                flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
-    else:
-        res.append(
-            MultiContentEntryPixmapAlphaTest(
-                pos=(
-                    3, 3), size=(
-                    40, 40), png=loadPNG(page1)))
-        res.append(
-            MultiContentEntryText(
-                pos=(
-                    70,
-                    0),
-                size=(
-                    500,
-                    50),
-                font=0,
-                text=name,
-                color=0xa6d1fe,
-                flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
-
-    return res
+def isGstPlayerAvailable():
+    return exists("/usr/bin/gstplayer")
 
 
 # Set the skin path based on the screen resolution
 screenwidth = getDesktop(0).size()
 screen_width = screenwidth.width()  # Save the screen width in a variable
-
-# Unified logic to determine the skin_path based on resolution and DreamOS
 if screen_width == 2560:
     skin_path = join(PLUGIN_PATH, 'skin/skin_pli/defaultListScreen_newuhd.xml')
 elif screen_width == 1920:
@@ -239,258 +175,147 @@ elif screen_width == 1920:
 else:
     skin_path = join(PLUGIN_PATH, 'skin/skin_pli/defaultListScreen.xml')
 
-# Add support for DreamOS
-if Utils.DreamOS():
+if exists('/var/lib/dpkg/status'):
     skin_path = skin_path.replace('skin_pli', 'skin_cvs')
 
+skin_info = join(PLUGIN_PATH, 'skin/info/info.xml')
 
-def returnIMDB(text_clear):
-    text = html_conv.html_unescape(text_clear)
-    if Utils.is_TMDB:
-        try:
-            from Plugins.Extensions.TMBD.plugin import TMBD
-            _session.open(TMBD.tmdbScreen, text, 0)
-        except Exception as e:
-            print("[XCF] Tmdb: ", str(e))
-        return True
 
-    elif Utils.is_tmdb:
-        try:
-            from Plugins.Extensions.tmdb.plugin import tmdb
-            _session.open(tmdb.tmdbScreen, text, 0)
-        except Exception as e:
-            print("[XCF] Tmdb: ", str(e))
-        return True
+class m2list(MenuList):
 
-    elif Utils.is_imdb:
-        try:
-            from Plugins.Extensions.IMDb.plugin import main as imdb
-            imdb(_session, text)
-        except Exception as e:
-            print("[XCF] imdb: ", str(e))
-        return True
+    def __init__(self, items):
+        MenuList.__init__(self, items, True, eListboxPythonMultiContent)
+        screen_width = screenwidth.width()
+
+        if screen_width == 2560:
+            self.l.setItemHeight(70)
+            self.l.setFont(0, gFont('Regular', 42))
+        elif screen_width == 1920:
+            self.l.setItemHeight(60)
+            self.l.setFont(0, gFont('Regular', 30))
+        else:
+            self.l.setItemHeight(35)
+            self.l.setFont(0, gFont('Regular', 24))
+
+
+def show_(name, link, img, session, description):
+    res = [(name, link, img, session, description)]
+    page1 = join(PLUGIN_PATH, 'skin/images_new/50x50.png')
+    screen_width = screenwidth.width()
+
+    if screen_width == 2560:
+        icon_pos, icon_size = (5, 5), (60, 60)
+        text_pos, text_size = (110, 0), (1200, 50)
+    elif screen_width == 1920:
+        icon_pos, icon_size = (5, 5), (50, 50)
+        text_pos, text_size = (90, 0), (1000, 50)
     else:
-        _session.open(MessageBox, text, MessageBox.TYPE_INFO)
+        icon_pos, icon_size = (3, 3), (40, 40)
+        text_pos, text_size = (70, 0), (500, 50)
+
+    res.append(MultiContentEntryPixmapAlphaTest(pos=icon_pos, size=icon_size, png=loadPNG(page1)))
+    res.append(MultiContentEntryText(
+        pos=text_pos,
+        size=text_size,
+        font=0,
+        text=name,
+        color=0xA6D1FE,
+        flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER
+    ))
+
+    return res
+
+
+def returnIMDB(session, text_clear):
+    """Show IMDB/TMDB information for the content"""
+    text = html_unescape(text_clear)
+
+    if Utils.is_TMDB and Utils.TMDB:
+        try:
+            session.open(Utils.TMDB.tmdbScreen, text, 0)
+        except Exception as e:
+            print("[DEBUG][XCF] TMDB error:", str(e))
         return True
-    return False
 
+    elif Utils.is_tmdb and Utils.tmdb:
+        try:
+            session.open(Utils.tmdb.tmdbScreen, text, 0)
+        except Exception as e:
+            print("[DEBUG][XCF] tmdb error:", str(e))
+        return True
 
-def get_rtmp(data):
-    try:
-        from urllib3.exceptions import InsecureRequestWarning
-        from urllib3 import disable_warnings
-        disable_warnings(InsecureRequestWarning)
-        referer = 'http://www.filmon.com'
-        from .lib import client
-        headers = {'User-Agent': client.agent(), 'Referer': referer}
-        content = six.ensure_str(client.request(data, headers=headers))
-        rtmp = findall(r'"quality".*?url"\:"(.*?)"', content)
-        if rtmp:
-            fin_url = rtmp[0].replace('\\', '')
-            return fin_url
-    except Exception as ex:
-        print("Error: can't read data", ex)
-        return None
+    elif Utils.is_imdb and Utils.imdb:
+        try:
+            Utils.imdb(session, text)
+        except Exception as e:
+            print("[DEBUG][XCF] IMDb error:", str(e))
+        return True
+
+    session.open(MessageBox, text, MessageBox.TYPE_INFO)
+    return True
 
 
 def get_session():
-    urlx = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=rtmp'
+    urlx = 'http://www.filmon.com/tv/api/init?app_android_device_model=GT-N7000&app_android_test=false&app_version=2.0.90&app_android_device_tablet=true&app_android_device_manufacturer=SAMSUNG&app_secret=wis9Ohmu7i&app_id=android-native&app_android_api_version=10%20HTTP/1.1&channelProvider=ipad&supported_streaming_protocol=livehttp'
     req = Request(urlx)
-    req.add_header(
-        'User-Agent',
-        'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')
+    req.add_header('User-Agent', USER_AGENT)
     req.add_header('Referer', 'http://www.filmon.com/')
     req.add_header('X-Requested-With', 'XMLHttpRequest')
-    try:
-        page = urlopen(req, None, 15)
-        content = page.read()
-        if PY3:
-            content = six.ensure_str(content)
-
-        x = json_loads(content)
-        session = x.get("session_key", 'none')
-        if session != 'none':
-            return str(session)
-        else:
-            return 'none'
-    except HTTPError as e:
-        print("HTTP error occurred: {} - {}".format(e.code, e.reason))
-    except URLError as e:
-        print("URL error occurred: {}".format(e.reason))
-    except Exception as e:
-        print("An unexpected error occurred: {}".format(e))
-    return 'none'
+    page = urlopen(req, None, 15)
+    content = page.read()
+    if PY3:
+        content = six.ensure_str(content)
+    x = json_loads(content)
+    session = x["session_key"]
+    if session:
+        print('session: ', str(session))
+        return str(session)
+    else:
+        return 'none'
 
 
 class filmon(Screen):
     def __init__(self, session):
         self.session = session
-        skin = skin_path
-        with codecs.open(skin, "r", encoding="utf-8") as f:
+
+        with codecs.open(skin_path, "r", encoding="utf-8") as f:
             self.skin = f.read()
         Screen.__init__(self, session)
-        global _session
-        _session = session
         self.menulist = []
-        self.setTitle(title_plug)
+        self.setTitle(TITLE_PLUG)
         self['menulist'] = m2list([])
         self['red'] = Label(_('Exit'))
-        self['yellow'] = Label(_('Update'))
         self['name'] = Label('Loading data... Please wait')
         self['text'] = Label()
         self['poster'] = Pixmap()
         self.picload = ePicLoad()
+        self.picfile = ''
+        self.dnfile = 'False'
         self.currentList = 'menulist'
-        # self.currentList = self['menulist']
-        self.Update = False
-        self["actions"] = ActionMap(
-            [
-                "ChannelSelectBaseActions",
-                "DirectionActions",
-                "HotkeyActions",
-                "InfobarEPGActions",
-                "OkCancelActions",
-            ],
+        self.loading_ok = False
+        self['actions'] = ActionMap(
+            ['OkCancelActions',
+             'ColorActions',
+             'DirectionActions',
+             'ButtonSetupActions',
+             'ChannelSelectEPGActions',
+             'MovieSelectionActions'],
             {
-                "cancel": self.closerm,
-                "down": self.down,
-                "green": self.ok,
-                "info_long": self.update_dev,
-                "infolong": self.update_dev,  # alias? mantenuto se serve compatibilità
-                "left": self.left,
-                "ok": self.ok,
-                "red": self.closerm,
-                "right": self.right,
-                "showEventInfoPlugin": self.update_dev,
-                "up": self.up,
-                "yellow": self.update_me,
-                "yellow_long": self.update_dev,
-            },
-            -1
+                'up': self.up,
+                'down': self.down,
+                'left': self.left,
+                'right': self.right,
+                'ok': self.ok,
+                'cancel': self.exit,
+                'info': self.infohelp,
+                'red': self.exit
+            }, -1
         )
 
-        self.timer = eTimer()
-        if exists('/var/lib/dpkg/status'):
-            self.timer_conn = self.timer.timeout.connect(self.check_vers)
-        else:
-            self.timer.callback.append(self.check_vers)
-        self.timer.start(500, 1)
         self.onLayoutFinish.append(self.downxmlpage)
 
-    def check_vers(self):
-        """
-        Check the latest version and changelog from the remote installer URL.
-        If a new version is available, notify the user.
-        """
-        remote_version = '0.0'
-        remote_changelog = ''
-        try:
-
-            def feth(url):
-                try:
-                    req = Request('http://example.com')
-                    response = urlopen(req)
-                    content = response.read()
-                    response.close()
-                    return content
-                except HTTPError as e:
-                    print('Errore HTTP: %s' % str(e))
-                except URLError as e:
-                    print('Errore URL: %s' % str(e))
-                except Exception as e:
-                    print('Errore generico: %s' % str(e))
-                return None
-
-            req = Utils.Request(
-                Utils.b64decoder(installer_url), headers={
-                    'User-Agent': 'Mozilla/5.0'})
-            page = Utils.urlopen(req).read()
-            page = feth(installer_url)
-            data = page.decode("utf-8") if PY3 else page.encode("utf-8")
-            if data:
-                lines = data.split("\n")
-                for line in lines:
-                    if line.startswith("version"):
-                        remote_version = line.split(
-                            "'")[1] if "'" in line else '0.0'
-                    elif line.startswith("changelog"):
-                        remote_changelog = line.split(
-                            "'")[1] if "'" in line else ''
-                        break
-        except Exception as e:
-            self.session.open(
-                MessageBox, _('Error checking version: %s') %
-                str(e), MessageBox.TYPE_ERROR, timeout=5)
-            return
-        self.new_version = remote_version
-        self.new_changelog = remote_changelog
-        # if float(currversion) < float(remote_version):
-        if currversion < remote_version:
-            self.Update = True
-            self.session.open(
-                MessageBox,
-                _('New version %s is available\n\nChangelog: %s\n\nPress info_long or yellow_long button to start force updating.') %
-                (self.new_version,
-                 self.new_changelog),
-                MessageBox.TYPE_INFO,
-                timeout=5)
-
-    def update_me(self):
-        if self.Update is True:
-            self.session.openWithCallback(
-                self.install_update,
-                MessageBox,
-                _("New version %s is available.\n\nChangelog: %s \n\nDo you want to install it now?") %
-                (self.new_version,
-                 self.new_changelog),
-                MessageBox.TYPE_YESNO)
-        else:
-            self.session.open(
-                MessageBox,
-                _("Congrats! You already have the latest version..."),
-                MessageBox.TYPE_INFO,
-                timeout=4)
-
-    def update_dev(self):
-        try:
-            req = Utils.Request(
-                Utils.b64decoder(developer_url), headers={
-                    'User-Agent': 'Mozilla/5.0'})
-            page = Utils.urlopen(req).read()
-            data = json_loads(page)
-            remote_date = data['pushed_at']
-            strp_remote_date = datetime.strptime(
-                remote_date, '%Y-%m-%dT%H:%M:%SZ')
-            remote_date = strp_remote_date.strftime('%Y-%m-%d')
-            self.session.openWithCallback(
-                self.install_update,
-                MessageBox,
-                _("Do you want to install update ( %s ) now?") %
-                (remote_date),
-                MessageBox.TYPE_YESNO)
-        except Exception as e:
-            print('error xcons:', e)
-
-    def install_update(self, answer=False):
-        if answer:
-            cmd1 = 'wget -q "--no-check-certificate" ' + \
-                Utils.b64decoder(installer_url) + ' -O - | /bin/sh'
-            self.session.open(
-                xConsole,
-                'Upgrading...',
-                cmdlist=[cmd1],
-                finishedCallback=self.myCallback,
-                closeOnSuccess=False)
-        else:
-            self.session.open(
-                MessageBox,
-                _("Update Aborted!"),
-                MessageBox.TYPE_INFO,
-                timeout=3)
-
-    def myCallback(self, result=None):
-        print('result:', result)
-        return
+    def infohelp(self):
+        self.session.open(FilmonInfo)
 
     def up(self):
         try:
@@ -538,122 +363,269 @@ class filmon(Screen):
         self['name'].setText(_('Try again later ...'))
 
     def _gotPageLoad(self, data):
-        self.auswahl = ''
+        self.selection = ''
         self.index = 'group'
-        self.cat_list = []
+        self.category_list = []
+
         global sessionx
         sessionx = get_session()
-        url = data
+
+        page_content = data
         if PY3:
-            url = six.ensure_str(url)
-        # print("content 3 =", url)
+            page_content = six.ensure_str(page_content)
+
+        # print("page content =", page_content)
+
         try:
-            n1 = url.find('<ul class="group-channels"', 0)
-            n2 = url.find('<div id="footer">', n1)
-        except BaseException:
-            n1 = url.find(b'<ul class="group-channels"', 0)
-            n2 = url.find(b'<div id="footer">', n1)
-        url = url[n1:n2]
-        regexvideo = 'class="group-item".*?a href="(.*?)".*?logo" src="(.*?)".*?title="(.*?)"'
-        #  regexvideo = '<li class="group-item".*?a href="(.*?)".*?title="(.*?)"'
-        match = compile(regexvideo, DOTALL).findall(url)
-        for url, img, name in match:
+            start = page_content.find('<ul class="group-channels"', 0)
+            end = page_content.find('<div id="footer">', start)
+        except:
+            start = page_content.find(b'<ul class="group-channels"', 0)
+            end = page_content.find(b'<div id="footer">', start)
+
+        content_block = page_content[start:end]
+
+        regex = r'class="group-item".*?a href="(.*?)".*?logo" src="(.*?)".*?title="(.*?)"'
+        matches = compile(regex, DOTALL).findall(content_block)
+
+        for url, img, name in matches:
             img = img.replace('\\', '')
             url = "http://www.filmon.com" + url
-            # pic = ''
-            url = Utils.checkStr(url)
-            img = Utils.checkStr(img)
-            name = Utils.checkStr(name)
-            self.cat_list.append(show_(name, url, img, sessionx, name))
-        self['menulist'].l.setList(self.cat_list)
+
+            if PY3:
+                url = six.ensure_str(url)
+                img = six.ensure_str(img)
+                name = six.ensure_str(name)
+            else:
+                if isinstance(url, unicode):
+                    url = url.encode('utf-8')
+                if isinstance(img, unicode):
+                    img = img.encode('utf-8')
+                if isinstance(name, unicode):
+                    name = name.encode('utf-8')
+
+            pic = ''
+            self.category_list.append(show_(name, url, img, sessionx, pic))
+            self.current_list_items = [(item[0], item[1]) for item in self.category_list]
+
+        self['menulist'].l.setList(self.category_list)
         self['menulist'].moveToIndex(0)
         self['name'].setText('Select')
-        self.auswahl = self['menulist'].getCurrent()[0][0]
-        self['name'].setText(self.auswahl)
-        # self['text'].setText()
+        self.selection = self['menulist'].getCurrent()[0][0]
+        self['name'].setText(self.selection)
+
         self.load_poster()
 
     def cat(self, url):
-        self.auswahl = ''
+        self.selection = ''
         self.index = 'cat'
-        self.cat_list = []
+        self.category_list = []
         self.id = ''
-        req = Request(url)
-        req.add_header(
-            'User-Agent',
-            'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')
-        req.add_header('Referer', 'http://www.filmon.com/')
-        req.add_header('X-Requested-With', 'XMLHttpRequest')
-        page = urlopen(req)
-        r = page.read()
-        if PY3:
-            r = six.ensure_str(r)
+
+        group_id = url.split('/')[-1]
+        session = get_session()
+        if not session:
+            self['name'].setText(_('Session error, try again later ...'))
+            return
+
+        # Try API first
+        api_url = 'https://eu-api.filmon.com/api/group/' + group_id + '?session_key=' + session
         try:
-            n1 = r.find('channels"', 0)
-            n2 = r.find('channels_count"', n1)
-        except BaseException:
-            n1 = r.find('channels"', 0)
-            n2 = r.find('channels_count"', n1)
-        r2 = r[n1:n2]
-        channels = findall(
-            '"id":(.*?),"logo":".*?","big_logo":"(.*?)","title":"(.*?)",.*?description":"(.*?)"',
-            r2)
-        for id, img, title, description in channels:
-            img = img.replace('\\', '')
-            img = Utils.checkStr(img)
-            id = Utils.checkStr(id)
-            self.id = id
-            title = html_conv.html_unescape(title)
-            description = html_conv.html_unescape(description)
-            self.cat_list.append(show_(title, id, img, sessionx, description))
-        self['menulist'].l.setList(self.cat_list)
-        self['menulist'].moveToIndex(0)
+            headers = {
+                'User-Agent': USER_AGENT,
+                'Referer': 'http://www.filmon.com',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+            req = Request(api_url, headers=headers)
+            response = urlopen(req)
+            content = response.read()
+            if PY3:
+                content = content.decode('utf-8')
+            data = json_loads(content)
+            channels = data.get('channels', [])
 
-        self.xcurrentList = [(item[0], item[1]) for item in self.cat_list]
-        # print('xcurrentList=', self.xcurrentList)
+            if channels:
+                for channel in channels:
+                    channel_id = channel.get('id', '')
+                    title = channel.get('title', '')
+                    description = channel.get('description', '')
+                    img = channel.get('big_logo', '') or channel.get('logo', '')
+                    if img:
+                        img = img.replace('\\', '')
+                    self.category_list.append(show_(title, channel_id, img, session, description))
+                    self.current_list_items = [(item[0], item[1]) for item in self.category_list]
 
-        self.auswahl = self['menulist'].getCurrent()[0][0]
-        self['name'].setText(str(self.auswahl))
-        self.load_poster()
+                self['menulist'].l.setList(self.category_list)
+                self['menulist'].moveToIndex(0)
+                self.selection = self['menulist'].getCurrent()[0][0]
+                self['name'].setText(str(self.selection))
+                self.load_poster()
+                return
+
+        except Exception as e:
+            print("API error:", str(e))
+
+        # If API fails, fallback to HTML parsing
+        try:
+            req = Request(url)
+            req.add_header('User-Agent', USER_AGENT)
+            req.add_header('Referer', 'http://www.filmon.com/')
+            req.add_header('X-Requested-With', 'XMLHttpRequest')
+            page = urlopen(req)
+            page_content = page.read()
+            if PY3:
+                page_content = six.ensure_str(page_content)
+
+            regexvideo = r'data-channel-id="(.*?)".*?<img src="(.*?)".*?<a href=".*?">(.*?)</a>'
+            matches = findall(regexvideo, page_content, DOTALL)
+
+            for channel_id, img, title in matches:
+                img = img.replace('\\', '')
+                title = html_unescape(title)
+                self.category_list.append(show_(title, channel_id, img, session, ''))
+                self.current_list_items = [(item[0], item[1]) for item in self.category_list]
+
+            self['menulist'].l.setList(self.category_list)
+            self['menulist'].moveToIndex(0)
+            self.selection = self['menulist'].getCurrent()[0][0]
+            self['name'].setText(str(self.selection))
+            self.load_poster()
+
+        except Exception as e:
+            print("HTML parsing error:", str(e))
+            self['name'].setText(_('Error loading channels'))
+
+    def onHlsSelected(self, selected_url, channelID, index, currentList):
+        if selected_url:
+            self.play_that_shit(selected_url, channelID, 'hls', index, currentList)
 
     def ok(self):
         try:
+            current_index = self['menulist'].getCurrent()
+            if not current_index:
+                return
+
             if self.index == 'cat':
-                id = self['menulist'].getCurrent()[0][1]
-                session = self['menulist'].getCurrent()[0][3]
-                url = 'http://www.filmon.com/api-v2/channel/' + \
-                    str(id) + "?session_key=" + session
-                # print("url OK", url)
-                self.get_rtmpi(url)
+                channel_id = current_index[0][1]
+                print('Channel ID:', channel_id)
+                session = get_session()
+                if session:
+                    url = f'https://eu-api.filmon.com/api/channel/{channel_id}?session_key={session}'
+                    self.get_rtmp(url, channel_id)
+
             elif self.index == 'group':
-                url = self['menulist'].getCurrent()[0][1]
-                session = self['menulist'].getCurrent()[0][3]
-                self.cat(url)
+                group_url = current_index[0][1]
+                print('Group URL:', group_url)
+                self.cat(group_url)
+
         except Exception as e:
-            print("Error: can't find file", e)
+            print("Error:", str(e))
+            print("Error: can't find file")
 
-    def get_rtmpi(self, data):
+    def get_rtmp(self, url, channel_id):
         try:
-            fin_url = get_rtmp(data)
-            selected_item = self['menulist'].getCurrent()
-            i = self['menulist'].getSelectedIndex()
-            selection = self['menulist'].l.getCurrentSelection()
-            item = selected_item[i]
-            name = item[0]
-            url = item[1]
-            self.currentindex = i
-            if selection is not None:
-                url = fin_url
-                # print("name:", name, "url:", url)
-                self.play_that_shit(
-                    url, name, self.currentindex, item, self.xcurrentList)
+            headers = {
+                'User-Agent': USER_AGENT,
+                'Referer': 'http://www.filmon.com',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+            req = Request(url, headers=headers)
+            response = urlopen(req, timeout=10)
+            content = response.read()
+            if PY3:
+                content = content.decode('utf-8')
+            data = json_loads(content)
+
+            hls_streams = []
+            streams = data.get('streams', [])
+
+            for stream in streams:
+                stream_url = stream.get('url', '')
+                stream_name = stream.get('name', '')
+                quality = stream.get('quality', '')
+
+                if '.m3u8' in stream_url:
+                    clean_url = stream_url.replace('\\', '')
+                    if stream_name and quality:
+                        display_name = "%s (%s)" % (stream_name, quality)
+                    else:
+                        display_name = "HLS Stream"
+                    hls_streams.append({'url': clean_url, 'name': display_name})
+
+            current_index = self['menulist'].getSelectedIndex()
+            current_list = self.current_list_items
+
+            if hls_streams:
+                if len(hls_streams) > 1:
+                    self.session.openWithCallback(
+                        lambda selected: self.onHlsSelected(selected, channel_id, current_index, current_list),
+                        HlsSelectionScreen,
+                        hls_streams,
+                        title=_("Select stream quality")
+                    )
+                else:
+                    self.play_that_shit(
+                        str(hls_streams[0]['url']),
+                        channel_id,
+                        'hls',
+                        current_index,
+                        current_list
+                    )
+
         except Exception as ex:
-            print("Error: can't read data", ex)
+            print("Error reading API data:", ex)
 
-    def play_that_shit(self, url, name, index, item, xcurrentList):
-        self.session.open(Playstream2, name, url, index, item, xcurrentList)
+    def fallback_hls(self, channel_id, streams):
+        token = None
 
-    def closerm(self):
+        # Extract token from the first URL that contains 'id='
+        for stream in streams:
+            url = stream.get('url', '')
+            if 'id=' in url:
+                token = url.split('id=')[1].split('&')[0].split('/')[0]
+                break
+
+        if token:
+            base_url = "http://edge%s.filmon.com/live/%s.%s.stream/playlist.m3u8?id=%s"
+            edge_server = random.randint(1300, 1400)
+
+            hls_urls = [
+                {'url': base_url % (edge_server, channel_id, 'high', token), 'name': 'High Quality'},
+                {'url': base_url % (edge_server, channel_id, 'low', token), 'name': 'Low Quality'}
+            ]
+
+            fallback_url = hls_urls[1]['url']  # Low quality
+            print('Fallback HLS URL:', fallback_url)
+            self.play_that_shit(str(fallback_url), channel_id, 'hls')
+        else:
+            print("Token not found for fallback")
+            self.session.open(
+                MessageBox,
+                _("Could not get stream token"),
+                MessageBox.TYPE_INFO
+            )
+
+    def play_that_shit(self, url, channel_id, stream_type, index=None, current_list=None):
+        if index is None:
+            index = self['menulist'].getSelectedIndex()
+        if current_list is None:
+            current_list = self.current_list_items
+
+        selected_item = current_list[index]
+        name = selected_item[0][0]
+
+        print("HLS URL player:", str(url))
+        self.session.open(
+            Playstream2,
+            name,
+            url,
+            channel_id,
+            stream_type,
+            index,
+            current_list
+        )
+
+    def exit(self):
         if self.index == 'group':
             Utils.deletetmp()
             self.close()
@@ -661,45 +633,46 @@ class filmon(Screen):
             self.downxmlpage()
 
     def load_poster(self):
-        global tmp_image
+        global TMP_IMAGE
+
+        current_item = self['menulist'].getCurrent()
+        if not current_item:
+            return
+
+        # Set description if in category view
         if self.index == 'cat':
-            descriptionX = self['menulist'].getCurrent()[0][4]
-            self['text'].setText(descriptionX)
+            description = current_item[0][4]
+            print('Description:', description)
+            self['text'].setText(description)
+        else:
+            self['text'].setText('')
 
-        pixmaps = self['menulist'].getCurrent()[0][2]
-        tmp_image = '/tmp/filmon/poster.png'
+        pixmap_url = current_item[0][2]
+        TMP_IMAGE = '/tmp/filmon/poster.png'
 
-        if pixmaps != "" or pixmaps != "n/A" or pixmaps is not None or pixmaps != "null":
-            if pixmaps.find('http') == -1:
-                self.poster_resize(tmp_image)
+        if pixmap_url and pixmap_url.lower() not in ("", "n/a", "null"):
+            if 'http' not in pixmap_url:
+                self.poster_resize(TMP_IMAGE)
                 return
             else:
                 try:
                     if PY3:
-                        pixmaps = six.ensure_binary(pixmaps)
+                        pixmap_url = six.ensure_binary(pixmap_url)
 
-                    if pixmaps.startswith(b"https") and sslverify:
-                        parsed_uri = urlparse(pixmaps)
+                    if pixmap_url.startswith(b"https") and sslverify:
+                        parsed_uri = urlparse(pixmap_url)
                         domain = parsed_uri.hostname
-                        sniFactory = SNIFactory(domain)
+                        sni_factory = SNIFactory(domain)
                         downloadPage(
-                            pixmaps,
-                            tmp_image,
-                            sniFactory,
-                            timeout=5).addCallback(
-                            self.downloadPic,
-                            tmp_image).addErrback(
-                            self.downloadError)
+                            pixmap_url,
+                            TMP_IMAGE,
+                            sni_factory,
+                            timeout=5
+                        ).addCallback(self.downloadPic, TMP_IMAGE).addErrback(self.downloadError)
                     else:
-                        downloadPage(
-                            pixmaps,
-                            tmp_image).addCallback(
-                            self.downloadPic,
-                            tmp_image).addErrback(
-                            self.downloadError)
+                        downloadPage(pixmap_url, TMP_IMAGE).addCallback(self.downloadPic, TMP_IMAGE).addErrback(self.downloadError)
                 except Exception as ex:
                     print("Error: can't find file or read data", ex)
-            return
 
     def downloadPic(self, data, pictmp):
         if exists(pictmp):
@@ -707,65 +680,142 @@ class filmon(Screen):
                 self.poster_resize(pictmp)
             except Exception as ex:
                 print("* error ** %s" % ex)
-                pass
-            except BaseException:
-                pass
+                self.poster_resize(TMP_IMAGE)
 
     def downloadError(self, png):
         try:
             if exists(png):
-                self.poster_resize(tmp_image)
+                self.poster_resize(TMP_IMAGE)
         except Exception as ex:
-            self.poster_resize(tmp_image)
+            self.poster_resize(TMP_IMAGE)
             print('exe downloadError', ex)
 
-    def poster_resize(self, png):
-        self["poster"].hide()
-        if exists(png):
-            size = self['poster'].instance.size()
-            self.picload = ePicLoad()
-            self.scale = AVSwitch().getFramebufferScale()
-            self.picload.setPara(
-                [size.width(), size.height(), self.scale[0], self.scale[1], 0, 1, '#00000000'])
-            if Utils.DreamOS():
-                self.picload.startDecode(png, False)
-            else:
-                self.picload.startDecode(png, 0, 0, False)
-            ptr = self.picload.getData()
-            if ptr is not None:
-                self['poster'].instance.setPixmap(ptr)
-                self['poster'].show()
+    def poster_resize(self, png_path):
+        self['poster'].hide()
+
+        if not exists(png_path):
             return
+
+        size = self['poster'].instance.size()
+        self.picload = ePicLoad()
+        scale = AVSwitch().getFramebufferScale()
+
+        self.picload.setPara([size.width(), size.height(), scale[0], scale[1], 0, 1, '#00000000'])
+
+        if exists('/var/lib/dpkg/status'):
+            self.picload.startDecode(png_path, False)
+        else:
+            self.picload.startDecode(png_path, 0, 0, False)
+
+        ptr = self.picload.getData()
+        if ptr is not None:
+            self['poster'].instance.setPixmap(ptr)
+            self['poster'].show()
+
+
+class HlsSelectionScreen(Screen):
+    def __init__(self, session, hls_urls, title=_("Select stream quality")):
+        Screen.__init__(self, session)
+        self.skinName = ["HlsSelectionScreen", "Setup"]
+        self.setTitle(title)
+        self.hls_urls = hls_urls
+
+        self["key_red"] = Label(_("Cancel"))
+        self["key_green"] = Label(_("OK"))
+        self["actions"] = ActionMap(
+            ["SetupActions", "ColorActions"],
+            {
+                "red": self.cancel,
+                "green": self.ok,
+                "cancel": self.cancel,
+                "ok": self.ok,
+            },
+            -2
+        )
+        self.list = []
+        for stream in hls_urls:
+            self.list.append((stream['name'], stream['url']))
+
+        self["config"] = MenuList(self.list)
+        self.selected_url = None
+
+    def ok(self):
+        selection = self["config"].getCurrent()
+        if selection:
+            self.selected_url = selection[1]
+            self.close(self.selected_url)
+
+    def cancel(self):
+        self.close(None)
 
 
 class TvInfoBarShowHide():
+    """ InfoBar show/hide control, accepts toggleShow and hide actions, might start
+    fancy animations. """
     STATE_HIDDEN = 0
     STATE_HIDING = 1
     STATE_SHOWING = 2
     STATE_SHOWN = 3
-    FLAG_CENTER_DVB_SUBS = 2048
+    # FLAG_CENTER_DVB_SUBS = 2048
     skipToggleShow = False
 
     def __init__(self):
-        self["ShowHideActions"] = ActionMap(["InfobarShowHideActions"],
-                                            {"toggleShow": self.OkPressed,
-                                             "hide": self.hide}, 0)
-        self.__event_tracker = ServiceEventTracker(
-            screen=self, eventmap={
-                iPlayableService.evStart: self.serviceStarted})
+        self["ShowHideActions"] = ActionMap(["InfobarShowHideActions"], {
+            "toggleShow": self.OkPressed,
+            "hide": self.hide
+        }, 0)
+
+        self.__event_tracker = ServiceEventTracker(screen=self, eventmap={
+            iPlayableService.evStart: self.serviceStarted
+        })
         self.__state = self.STATE_SHOWN
         self.__locked = 0
+
+        self.helpOverlay = Label("")
+        self.helpOverlay.skinAttributes = [
+            ("position", "0,0"),
+            ("size", "1280,50"),
+            ("font", "Regular;28"),
+            ("halign", "center"),
+            ("valign", "center"),
+            ("foregroundColor", "#FFFFFF"),
+            ("backgroundColor", "#666666"),
+            ("transparent", "0"),
+            ("zPosition", "100")
+        ]
+
+        self["helpOverlay"] = self.helpOverlay
+        self["helpOverlay"].hide()
         self.hideTimer = eTimer()
         try:
             self.hideTimer_conn = self.hideTimer.timeout.connect(
                 self.doTimerHide)
-        except AttributeError:
+        except BaseException:
             self.hideTimer.callback.append(self.doTimerHide)
-        self.hideTimer.start(3000, True)
+        self.hideTimer.start(5000, True)
         self.onShow.append(self.__onShow)
         self.onHide.append(self.__onHide)
 
+    def show_help_overlay(self):
+        help_text = (
+            "OK = Info | CH+/CH- = PREV/NEXT CHANNEL | PLAY/PAUSE = Toggle | STOP = Stop | EXIT = Exit"
+        )
+        self["helpOverlay"].setText(help_text)
+        self["helpOverlay"].show()
+
+        self.help_timer = eTimer()
+        self.help_timer.callback.append(self.hide_help_overlay)
+        self.help_timer.start(5000, True)
+
+    def hide_help_overlay(self):
+        self["helpOverlay"].hide()
+
     def OkPressed(self):
+        if self["helpOverlay"].visible:
+            self.help_timer.stop()
+            self.hide_help_overlay()
+        else:
+            self.show_help_overlay()
         self.toggleShow()
 
     def __onShow(self):
@@ -776,16 +826,13 @@ class TvInfoBarShowHide():
         self.__state = self.STATE_HIDDEN
 
     def serviceStarted(self):
-        if self.execing:
+        if self.execing and config.usage.show_infobar_on_zap.value:
             self.doShow()
 
     def startHideTimer(self):
         if self.__state == self.STATE_SHOWN and not self.__locked:
             self.hideTimer.stop()
-            self.hideTimer.start(3000, True)
-        elif hasattr(self, "pvrStateDialog"):
-            self.hideTimer.stop()
-        self.skipToggleShow = False
+            self.hideTimer.start(5000, True)
 
     def doShow(self):
         self.hideTimer.stop()
@@ -798,36 +845,53 @@ class TvInfoBarShowHide():
             self.hide()
 
     def toggleShow(self):
-        if self.skipToggleShow:
-            self.skipToggleShow = False
-            return
-        if self.__state == self.STATE_HIDDEN:
-            self.show()
-            self.hideTimer.stop()
+        if not self.skipToggleShow:
+            if self.__state == self.STATE_HIDDEN:
+                self.show()
+                self.hideTimer.stop()
+                self.show_help_overlay()
+
+            else:
+                self.hide()
+                self.startHideTimer()
+
+                if self["helpOverlay"].visible:
+                    self.help_timer.stop()
+                    self.hide_help_overlay()
         else:
-            self.hide()
-            self.startHideTimer()
+            self.skipToggleShow = False
 
     def lockShow(self):
-        self.__locked += 1
+        try:
+            self.__locked += 1
+        except BaseException:
+            self.__locked = 0
         if self.execing:
             self.show()
             self.hideTimer.stop()
             self.skipToggleShow = False
 
     def unlockShow(self):
-        self.__locked = max(0, self.__locked - 1)
-        if self.__locked == 0 and self.execing:
+        try:
+            self.__locked -= 1
+        except BaseException:
+            self.__locked = 0
+        if self.__locked < 0:
+            self.__locked = 0
+        if self.execing:
             self.startHideTimer()
 
 
-class Playstream2(InfoBarBase,
-                  InfoBarMenu,
-                  InfoBarSeek,
-                  InfoBarAudioSelection,
-                  InfoBarNotifications,
-                  TvInfoBarShowHide,
-                  Screen):
+class Playstream2(
+        Screen,
+        InfoBarMenu,
+        InfoBarBase,
+        InfoBarSeek,
+        InfoBarNotifications,
+        InfoBarAudioSelection,
+        TvInfoBarShowHide,
+        InfoBarSubtitleSupport):
+
     STATE_IDLE = 0
     STATE_PLAYING = 1
     STATE_PAUSED = 2
@@ -835,184 +899,314 @@ class Playstream2(InfoBarBase,
     ALLOW_SUSPEND = True
     screen_timeout = 5000
 
-    def __init__(self, session, name, url, index, item, currentList):
-
-        global streaml, _session
+    def __init__(self, session, name, url, channelID, stream_type, index, currentList):
         Screen.__init__(self, session)
+        
         self.session = session
-        _session = session
         self.skinName = 'MoviePlayer'
+        
         self.currentindex = index
-        self.item = item
         self.itemscount = len(currentList)
         self.list = currentList
-        streaml = False
-        for x in InfoBarBase, \
-                InfoBarMenu, \
-                InfoBarSeek, \
-                InfoBarAudioSelection, \
-                InfoBarNotifications, \
-                TvInfoBarShowHide:
-            x.__init__(self)
-        self.allowPiP = False
-        self.service = None
+        
+        self.name = name
         self.url = url
-        self.name = html_conv.html_unescape(name)
+        self.channelID = channelID
+        self.stream_type = stream_type
+        
         self.state = self.STATE_PLAYING
-        self.srefInit = self.session.nav.getCurrentlyPlayingServiceReference()
+        self.servicetype = "4097"
+        
+        self.retry_count = 0
+        self.max_retries = 3
+
+        for base in [
+            InfoBarMenu, InfoBarNotifications, InfoBarBase,
+            TvInfoBarShowHide, InfoBarAudioSelection, InfoBarSubtitleSupport
+        ]:
+            base.__init__(self)
+
+        InfoBarSeek.__init__(self, actionmap='InfobarSeekActions')
         self['actions'] = ActionMap(
             [
-                'ButtonSetupActions',
-                'ChannelSelectBaseActions',
-                'ColorActions',
-                'DirectionActions',
-                'EPGSelectActions',
-                'InfobarActions',
-                'InfobarSeekActions',
-                'InfobarShowHideActions',
-                'MediaPlayerActions',
-                'MediaPlayerSeekActions',
-                'MoviePlayerActions',
-                'MovieSelectionActions',
-                'OkCancelActions',
+                "WizardActions",
+                "MoviePlayerActions",
+                "MovieSelectionActions",
+                "MediaPlayerActions",
+                "EPGSelectActions",
+                "MediaPlayerSeekActions",
+                "ColorActions",
+                "ButtonSetupActions",
+                "InfobarShowHideActions",
+                "InfobarActions",
+                "InfobarSeekActions"
             ],
             {
                 'epg': self.showIMDB,
                 'info': self.showIMDB,
                 'stop': self.cancel,
                 'leavePlayer': self.cancel,
-                'back': self.cancel,
                 'prevBouquet': self.previousitem,
                 'nextBouquet': self.nextitem,
                 'channelDown': self.previousitem,
                 'channelUp': self.nextitem,
                 'down': self.previousitem,
                 'up': self.nextitem,
-                'cancel': self.cancel,
+                "cancel": self.cancel,
+                "back": self.cancel,
+                "playpauseService": self.playpauseService
             },
             -1
         )
-
-        if '8088' in str(self.url):
-            streaml = True
-            self.onFirstExecBegin.append(self.slinkPlay)
-        else:
-            self.onFirstExecBegin.append(self.openTest)
+        self.srefInit = self.session.nav.getCurrentlyPlayingServiceReference()
+        self.openTest(self.servicetype, url)
         self.onClose.append(self.cancel)
 
+    def preventive_refresh(self):
+        new_url = self.regenerate_stream_url()
+        if new_url:
+            self.session.nav.stopService()
+            self.openTest(self.servicetype, new_url)
+        self.refresh_timer.start(300000, True)
+
+    def openTest(self, servicetype, url):
+        try:
+            encoded_url = url.replace(':', '%3a').replace(' ', '%20')
+            ref = '4097:0:1:0:0:0:0:0:0:0:' + str(encoded_url)
+            print('final reference:   ', ref)
+            sref = eServiceReference(ref)
+            sref.setName(self.name)
+            self.session.nav.stopService()
+            self.session.nav.playService(sref)
+
+            self.show()
+            self.state = self.STATE_PLAYING
+            if self.state == self.STATE_PLAYING:
+                self.show_help_overlay()
+
+        except Exception as e:
+            print("Error in openTest:", str(e))
+            self.session.open(MessageBox, _("Error playing stream"), MessageBox.TYPE_INFO)
+            self.close()
+
+    def up(self):
+        pass
+
+    def down(self):
+        self.up()
+
     def nextitem(self):
-        # Increment the current index
-        currentindex = int(self.currentindex) + 1
-        # print("nextitem currentindex:", currentindex)
-        # Circular handling
-        if currentindex >= len(self.list):
-            currentindex = 0  # Go back to the beginning
-        # print("nextitem currentindex after check:", currentindex)
-        # Update the current index and call update_channel
-        self.currentindex = currentindex
+        self.currentindex += 1
+        if self.currentindex >= len(self.list):
+            self.currentindex = 0
         self.update_channel()
 
     def previousitem(self):
-        # Decrement the current index
-        currentindex = int(self.currentindex) - 1
-        # print("previousitem currentindex:", currentindex)
-        # Circular handling: go back to the last item if going past the
-        # beginning
-        if currentindex < 0:
-            currentindex = len(self.list) - 1  # Go to the last item
-        # print("previousitem currentindex after check:", currentindex)
-        # Update the current index and call update_channel
-        self.currentindex = currentindex
+        self.currentindex -= 1
+        if self.currentindex < 0:
+            self.currentindex = len(self.list) - 1
         self.update_channel()
 
     def update_channel(self):
         if not self.list:
-            # print("Error: the list is empty")
             return
         if self.currentindex >= len(self.list) or self.currentindex < 0:
-            # print("Error: index out of range")
             return
-        group = self.list[self.currentindex]
-        # print('group=', group)
-        self.url = None
-        # print("Group content:", group)
-        session = group[0][3]
-        # print("Session Key:", session)
-        self.name = group[0][0]
-        # print("self.name:", self.name)
-        id = group[0][1]
-        if session and id:
-            url = 'http://www.filmon.com/api-v2/channel/' + \
-                str(id) + "?session_key=" + session
-            self.url = get_rtmp(url)
-            # print("url OK player", self.url)
 
-        if self.url is not None:
-            self.openTest()
-        else:
-            print("Error: URL not found")
+        # Get the channel info from the list
+        channel_info = self.list[self.currentindex]
+        self.name = channel_info[0][0]
+        channel_id = channel_info[0][1]
 
-    def openTest(self):
-        servicetype = '4097'
-        name = self.name
-        url = self.url
-        if url:
-            ref = "{0}:0:1:0:0:0:0:0:0:0:{1}:{2}".format(
-                servicetype, url.replace(
-                    ":", "%3a"), name.replace(
-                    ":", "%3a"))
-            # print('reference:   ', ref)
-            if streaml is True:
-                url = 'http://127.0.0.1:8088/' + str(url)
-                ref = "{0}:0:0:0:0:0:0:0:0:0:{1}:{2}".format(
-                    servicetype, url.replace(
-                        ":", "%3a"), name.replace(
-                        ":", "%3a"))
-            # print('final reference:   ', ref)
-            sref = eServiceReference(ref)
-            sref.setName(name)
-            self.session.nav.stopService()
-            self.session.nav.playService(sref)
-        else:
-            print("Errore: URL non valido in openTest()")
+        # Get the session key (it's stored in the third element of the first item)
+        session = channel_info[0][3]
+
+        if session and channel_id:
+            url = 'https://eu-api.filmon.com/api/channel/' + str(channel_id) + "?session_key=" + session
+            self.get_rtmp_update(url, channel_id)
+
+    def get_rtmp_update(self, data, channelID):
+        try:
+            # Same logic as in the main get_rtmp method but for updating the current stream
+            referer = 'http://www.filmon.com'
+            headers = {
+                'User-Agent': USER_AGENT,
+                'Referer': referer,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+            req = Request(data, headers=headers)
+            response = urlopen(req, timeout=10)
+            content = response.read()
+            if PY3:
+                content = content.decode('utf-8')
+            json_data = json_loads(content)
+
+            hls_urls = []
+            streams = json_data.get('streams', [])
+
+            for stream in streams:
+                url = stream.get('url', '')
+                if '.m3u8' in url:
+                    hls_url = url.replace('\\', '')
+                    hls_urls.append({'url': hls_url})
+
+            if hls_urls:
+                # Use the first available HLS stream
+                self.url = hls_urls[0]['url']
+                self.openTest(self.servicetype, self.url)
+            else:
+                # Fallback to manual URL construction
+                self.fallback_hls_update(channelID, streams)
+        except Exception as ex:
+            print("Error updating stream:", ex)
+
+    def fallback_hls_update(self, channelID, streams):
+        # Similar to the fallback_hls method but for updating
+        token = None
+        for stream in streams:
+            url = stream.get('url', '')
+            if 'id=' in url:
+                token = url.split('id=')[1].split('&')[0].split('/')[0]
+                break
+
+        if token:
+            base_url = "http://edge{}.filmon.com/live/{}.{}.stream/playlist.m3u8?id={}"
+            edge_server = random.randint(1300, 1400)
+            self.url = base_url.format(edge_server, channelID, 'high', token)
+            self.openTest(self.servicetype, self.url)
 
     def doEofInternal(self, playing):
-        # print('doEofInternal', playing)
-        Utils.MemClean()
-        if self.execing and playing:
-            self.openTest()
+        if playing and self.retry_count < self.max_retries:
+            self.retry_count += 1
+            print("Tentativo di riconnessione", self.retry_count)
+            self.retry_timer = eTimer()
+            try:
+                self.retry_timer_conn = self.retry_timer.timeout.connect(self.retry_playback)
+            except AttributeError:
+                self.retry_timer.callback.append(self.retry_playback)
+            self.retry_timer.start(2000, True)
+        else:
+            self.close()
 
     def __evEOF(self):
-        # print('__evEOF')
         self.end = True
-        Utils.MemClean()
-        self.openTest()
+        self.doEofInternal(True)
 
-    def showIMDB(self):
-        text_clear = self.name
-        if returnIMDB(text_clear):
-            print('show imdb/tmdb')
+    def retry_playback(self):
+        if self.retry_count < self.max_retries:
+            self.retry_count += 1
+            print("Tentativo di riconnessione", self.retry_count)
 
-    def slinkPlay(self):
-        name = self.name
-        url = self.url
-        ref = "{0}:{1}".format(
-            url.replace(
-                ":", "%3a"), name.replace(
-                ":", "%3a"))
-        # print('final reference:   ', ref)
-        sref = eServiceReference(ref)
-        sref.setName(str(name))
-        self.session.nav.stopService()
-        self.session.nav.playService(sref)
+            self.retry_timer = eTimer()
+            try:
+                self.retry_timer_conn = self.retry_timer.timeout.connect(self.do_retry)
+            except AttributeError:
+                self.retry_timer.callback.append(self.do_retry)
+            self.retry_timer.start(2000, True)
+        else:
+            self.close()
+
+    def do_retry(self):
+        new_url = self.regenerate_stream_url()
+        if new_url:
+            self.session.nav.stopService()
+            self.openTest(self.servicetype, new_url)
+        else:
+            self.close()
+
+    def regenerate_stream_url(self):
+        try:
+            session = get_session()
+            if not session:
+                return None
+
+            api_url = f'https://eu-api.filmon.com/api/channel/{self.channelID}?session_key={session}'
+            headers = {
+                'User-Agent': USER_AGENT,
+                'Referer': 'http://www.filmon.com',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+
+            req = Request(api_url, headers=headers)
+            response = urlopen(req, timeout=10)
+            content = response.read()
+            if PY3:
+                content = content.decode('utf-8')
+
+            data = json_loads(content)
+            streams = data.get('streams', [])
+            token = None
+            for stream in streams:
+                url = stream.get('url', '')
+                if 'id=' in url:
+                    token = url.split('id=')[1]
+                    break
+
+            if token:
+                base_url = "http://edge{}.filmon.com/live/{}.{}.stream/playlist.m3u8?id={}"
+                edge_server = random.randint(1300, 1400)
+                return base_url.format(edge_server, self.channelID, 'high', token)
+        except Exception as e:
+            print("Errore rigenerazione stream:", str(e))
+
+        return None
 
     def playpauseService(self):
-        if self.state == self.STATE_PLAYING:
-            self.pause()
-            self.state = self.STATE_PAUSED
-        elif self.state == self.STATE_PAUSED:
-            self.unpause()
-            self.state = self.STATE_PLAYING
+        """Toggle play/pause"""
+        service = self.session.nav.getCurrentService()
+        if not service:
+            print("[WARNING] No current service")
+            return
+
+        pauseable = service.pause()
+        if pauseable is None:
+            print("[WARNING] Service is not pauseable")
+            # Instead of failing, just stop and restart the service
+            if self.state == self.STATE_PLAYING:
+                current_ref = self.session.nav.getCurrentlyPlayingServiceReference()
+                if current_ref:
+                    self.session.nav.stopService()
+                    self.state = self.STATE_PAUSED
+                    print("[DEBUG]Info: Playback stopped (pause not supported)")
+
+            elif self.state == self.STATE_PAUSED:
+                current_ref = self.session.nav.getCurrentlyPlayingServiceReference()
+                if current_ref:
+                    self.session.nav.playService(current_ref)
+                    self.show()
+                    self.state = self.STATE_PLAYING
+                    if self.state == self.STATE_PLAYING:
+                        self.show_help_overlay()
+                    print("[DEBUG]Info: Playback resumed (pause not supported)")
+            return
+
+        try:
+            if self.state == self.STATE_PLAYING:
+                if hasattr(pauseable, "pause"):
+                    pauseable.pause()
+                    self.state = self.STATE_PAUSED
+                    print("[DEBUG]Info: Playback paused")
+            elif self.state == self.STATE_PAUSED:
+                if hasattr(pauseable, "play"):
+                    pauseable.play()
+                    self.state = self.STATE_PLAYING
+                    print("[DEBUG]Info: Playback resumed")
+        except Exception as e:
+            print("[ERROR]: Play/pause error: " + str(e))
+            self.show_error(_("Play/pause not supported for this stream"))
+
+    def show_error(self, message):
+        """Show error message and close player"""
+        self.session.openWithCallback(
+            self.leavePlayer,
+            MessageBox,
+            message,
+            MessageBox.TYPE_ERROR
+        )
+
+    def showIMDB(self):
+        """Show IMDB/TMDB information"""
+        returnIMDB(self.session, self.name)
 
     def pause(self):
         self.session.nav.pause(True)
@@ -1020,40 +1214,159 @@ class Playstream2(InfoBarBase,
     def unpause(self):
         self.session.nav.pause(False)
 
-    def openYtdl(self):
-        name = self.name
-        url = 'streamlink%3a//' + self.url
-        servicetype = '4097'
-        ref = "{0}:0:1:0:0:0:0:0:0:0:{1}:{2}".format(
-            servicetype, url.replace(
-                ":", "%3a"), name.replace(
-                ":", "%3a"))
-        # print('reference youtube:   ', ref)
-        sref = eServiceReference(ref)
-        sref.setName(str(name))
-        self.session.nav.stopService()
-        self.session.nav.playService(sref)
-
     def showAfterSeek(self):
         if isinstance(self, TvInfoBarShowHide):
             self.doShow()
 
-    def cancel(self):
+    def cancel(self, *args):
         if exists('/tmp/hls.avi'):
             remove('/tmp/hls.avi')
         self.session.nav.stopService()
-        self.session.nav.playService(self.srefInit)
+        if self.srefInit:
+            self.session.nav.playService(self.srefInit)
         aspect_manager.restore_aspect()
         self.close()
 
-    def leavePlayer(self):
-        self.cancel()
+    def leavePlayer(self, *args):
+        self.session.nav.stopService()
+        if self.srefInit:
+            self.session.nav.playService(self.srefInit)
+        self.close()
+
+
+class FilmonInfo(Screen):
+    def __init__(self, session):
+        self.session = session
+        skin = skin_info
+        with codecs.open(skin, "r", encoding="utf-8") as f:
+            self.skin = f.read()
+
+        Screen.__init__(self, session)
+
+        name = _('WELCOME TO FILMON PLUGIN BY LULULLA')
+        self['poster'] = Pixmap()
+        self['title'] = Label(name)
+        self['text'] = Label("")
+        self.help_text = ""
+        self.scroll_pos = 0
+
+        self['actions'] = ActionMap(['OkCancelActions', 'DirectionActions'], {
+            'ok': self.close,
+            'cancel': self.close,
+            'up': self.scrollUp,
+            'down': self.scrollDown
+        }, -2)
+
+        self.onLayoutFinish.append(self.finishLayout)
+
+    def scrollUp(self):
+        if self.scroll_pos > 0:
+            self.scroll_pos -= 1
+            self.updateText()
+
+    def scrollDown(self):
+        self.scroll_pos += 1
+        self.updateText()
+
+    def updateText(self):
+        lines = self.help_text.split('\n')
+        if self.scroll_pos >= len(lines):
+            self.scroll_pos = 0
+            
+        display_text = '\n'.join(lines[self.scroll_pos:self.scroll_pos+20])
+        self['text'].setText(display_text)
+
+    def finishLayout(self):
+        self.showHelp()
+
+    def showHelp(self):
+        self.help_text = "\n".join([
+            "Filmon Plugin",
+            "Version: " + CURR_VERSION,
+            "Created by: Lululla",
+            "License: GPL-3.0-or-later",
+            "",
+            "Features:",
+            " - Access Filmon content",
+            " - Browse categories, programs, and videos",
+            " - Play streaming video",
+            " - JSON API integration",
+            " - Debug logging",
+            " - User-friendly interface",
+            "",
+            "Credits:",
+            " - Original development by Lululla",
+            "",
+            "Usage:",
+            " Press OK to play the selected video",
+            " Press Back to return",
+            "",
+            "Enjoy Filmon streaming!"
+        ])
+        
+        self.updateText()
+
+
+class FilmonInfo2(Screen):
+    def __init__(self, session):
+        self.session = session
+        skin = skin_info
+        with codecs.open(skin, "r", encoding="utf-8") as f:
+            self.skin = f.read()
+
+        Screen.__init__(self, session)
+
+        name = _('WELCOME TO FILMON PLUGIN BY LULULLA')
+        self['poster'] = Pixmap()
+        self['title'] = Label(name)
+        self['text'] = MenuList([])
+
+        self['actions'] = ActionMap(['OkCancelActions'], {
+            'ok': self.close,
+            'cancel': self.close
+        }, -2)
+
+        self.onLayoutFinish.append(self.finishLayout)
+
+    def finishLayout(self):
+        self.showHelp()
+
+    def showHelp(self):
+        help_lines = [
+            "Filmon Plugin",
+            "Version: " + CURR_VERSION,
+            "Created by: Lululla",
+            "License: GPL-3.0-or-later",
+            "",
+            "Features:",
+            " - Access Filmon content",
+            " - Browse categories, programs, and videos",
+            " - Play streaming video",
+            " - JSON API integration",
+            " - Debug logging",
+            " - User-friendly interface",
+            "",
+            "Credits:",
+            " - Original development by Lululla",
+            "",
+            "Usage:",
+            " Press OK to play the selected video",
+            " Press Back to return",
+            "",
+            "Enjoy Filmon streaming!"
+        ]
+        
+        list_items = []
+        for line in help_lines:
+            list_items.append((line,))
+            
+        self['text'].setList(list_items)
 
 
 def main(session, **kwargs):
     try:
         session.open(filmon)
-    except BaseException:
+    except:
         import traceback
         traceback.print_exc()
         pass
@@ -1061,19 +1374,7 @@ def main(session, **kwargs):
 
 def Plugins(**kwargs):
     icona = 'plugin.png'
-    extDescriptor = PluginDescriptor(
-        name='Filmon Player',
-        description=desc_plugin,
-        where=PluginDescriptor.WHERE_EXTENSIONSMENU,
-        icon=icona,
-        fnc=main)
-    result = [
-        PluginDescriptor(
-            name=title_plug,
-            description=desc_plugin,
-            where=PluginDescriptor.WHERE_PLUGINMENU,
-            icon=icona,
-            fnc=main)]
+    extDescriptor = PluginDescriptor(name='Filmon Player', description=DESC_PLUGIN, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=icona, fnc=main)
+    result = [PluginDescriptor(name=TITLE_PLUG, description=DESC_PLUGIN, where=PluginDescriptor.WHERE_PLUGINMENU, icon=icona, fnc=main)]
     result.append(extDescriptor)
     return result
-    # PluginDescriptor(name=title_plug, description=desc_plugin, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),

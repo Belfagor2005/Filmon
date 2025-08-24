@@ -1,0 +1,14 @@
+<screen name="FilmonInfo" position="center,center" size="1280,720" title="..::Filmon Info::.." backgroundColor="#20000000" flags="wfNoBorder">
+	<widget name="title" position="28,657" size="805,51" font="Regular; 28" halign="center" valign="center" foregroundColor="#002a79b8" backgroundColor="black" transparent="1" zPosition="5" />
+	<eLabel position="957,360" size="250,250" zPosition="3" backgroundColor="#808080" />
+	<widget name="poster" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/Filmon/skin/info/FilmOn-Icon.png" position="958,361" size="250,250" zPosition="4" backgroundColor="#30000000" transparent="1" alphatest="on" scale="stretch" />
+	<ePixmap pixmap="/usr/lib/enigma2/python/Plugins/Extensions/Filmon/skin/images/main.png" position="0,0" size="1280,720" alphatest="blend" zPosition="-8" />
+	<ePixmap pixmap="/usr/lib/enigma2/python/Plugins/Extensions/Filmon/skin/info/FilmOn-Banner.jpg" position="31,6" size="279,70" alphatest="blend" zPosition="5" scale="stretch" />
+	<ePixmap pixmap="/usr/lib/enigma2/python/Plugins/Extensions/Filmon/skin/info/sep.png" position="26,71" size="805,5" zPosition="5" />
+	<ePixmap pixmap="/usr/lib/enigma2/python/Plugins/Extensions/Filmon/skin/info/sep.png" position="26,646" size="805,5" zPosition="5" />
+	<!-- Menu List -->
+	<widget name="text" position="26,78" size="805,566" font="Regular;26" foregroundColor="#002a79b8" backgroundColor="black" zPosition="5" scrollbarMode="showNever" />
+    <eLabel name="" position="773,10" size="52,52" backgroundColor="#003e4b53" halign="center" valign="center" transparent="0" cornerRadius="9" font="Regular; 16" zPosition="3" text="EXIT" />
+	<ePixmap position="1013,626" size="156,70" zPosition="5" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/Filmon/skin/info/PayPal.png" alphatest="on" />
+	<ePixmap position="920,26" size="320,320" zPosition="3" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/Filmon/skin/info/qr-code.png" alphatest="on" />	
+</screen>
