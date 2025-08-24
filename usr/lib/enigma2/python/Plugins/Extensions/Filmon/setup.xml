@@ -1,0 +1,8 @@
+<setupxml>
+    <setup key="FilmonSettings" title="Filmon Settings">
+        <item level="1" text="Enable token auto-refresh" description="Enable Token Update refresh on Player.">config.plugins.filmon.token_refresh</item>
+        <if conditional="config.plugins.filmon.token_refresh.value">
+            <item level="1" text="Token refresh interval (seconds)" description="Set Timer Refresh update Player.">config.plugins.filmon.token_refresh_interval</item>
+		</if>
+    </setup>
+</setupxml>

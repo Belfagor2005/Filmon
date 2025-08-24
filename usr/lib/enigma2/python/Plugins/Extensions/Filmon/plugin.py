@@ -56,6 +56,7 @@ from enigma import (
     gFont,
     iPlayableService,
     loadPNG,
+    iServiceInformation
 )
 
 # Enigma2 component imports
@@ -64,13 +65,12 @@ try:
 except ImportError:
     from Components.AVSwitch import eAVControl as AVSwitch
 from Components.ActionMap import ActionMap
-from Components.config import config
+from Components.config import config, ConfigSubsection, ConfigInteger, ConfigYesNo
 from Components.Label import Label
 from Components.MenuList import MenuList
 from Components.MultiContent import MultiContentEntryPixmapAlphaTest, MultiContentEntryText
 from Components.Pixmap import Pixmap
 from Components.ServiceEventTracker import InfoBarBase, ServiceEventTracker
-from Components.ScrollLabel import ScrollLabel
 
 # Enigma2 screen imports
 from Screens.InfoBarGenerics import (
@@ -82,6 +82,7 @@ from Screens.InfoBarGenerics import (
 )
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
+from Screens.Setup import Setup
 
 # Enigma2 tools imports
 from Tools.Directories import SCOPE_PLUGINS, resolveFilename
@@ -108,6 +109,10 @@ TMP_IMAGE = '/tmp/filmon/poster.png'
 aspect_manager = Utils.AspectManager()
 disable_warnings(InsecureRequestWarning)
 PY3 = version_info[0] == 3
+
+config.plugins.filmon = ConfigSubsection()
+config.plugins.filmon.token_refresh = ConfigYesNo(default=True)
+config.plugins.filmon.token_refresh_interval = ConfigInteger(default=45, limits=(30, 300))
 
 if PY3:
     from urllib.parse import urlparse
@@ -274,6 +279,15 @@ def get_session():
         return 'none'
 
 
+class FilmonSettings(Setup):
+    def __init__(self, session, parent=None):
+        Setup.__init__(self, session, setup="FilmonSettings", plugin="Extensions/Filmon")
+        self.parent = parent
+
+    def keySave(self):
+        Setup.keySave(self)
+
+
 class filmon(Screen):
     def __init__(self, session):
         self.session = session
@@ -297,9 +311,9 @@ class filmon(Screen):
             ['OkCancelActions',
              'ColorActions',
              'DirectionActions',
-             'ButtonSetupActions',
+             # 'ButtonSetupActions',
              'ChannelSelectEPGActions',
-             'MovieSelectionActions'],
+             'MenuActions'],
             {
                 'up': self.up,
                 'down': self.down,
@@ -308,11 +322,15 @@ class filmon(Screen):
                 'ok': self.ok,
                 'cancel': self.exit,
                 'info': self.infohelp,
+                "menu": self.open_settings,
                 'red': self.exit
             }, -1
         )
 
         self.onLayoutFinish.append(self.downxmlpage)
+
+    def open_settings(self):
+        self.session.open(FilmonSettings)
 
     def infohelp(self):
         self.session.open(FilmonInfo)
@@ -756,7 +774,7 @@ class TvInfoBarShowHide():
     STATE_HIDING = 1
     STATE_SHOWING = 2
     STATE_SHOWN = 3
-    # FLAG_CENTER_DVB_SUBS = 2048
+    FLAG_CENTER_DVB_SUBS = 2048
     skipToggleShow = False
 
     def __init__(self):
@@ -771,6 +789,7 @@ class TvInfoBarShowHide():
         self.__state = self.STATE_SHOWN
         self.__locked = 0
 
+        # Aggiungi l'help overlay come in Vavoo
         self.helpOverlay = Label("")
         self.helpOverlay.skinAttributes = [
             ("position", "0,0"),
@@ -786,13 +805,13 @@ class TvInfoBarShowHide():
 
         self["helpOverlay"] = self.helpOverlay
         self["helpOverlay"].hide()
+        
         self.hideTimer = eTimer()
         try:
-            self.hideTimer_conn = self.hideTimer.timeout.connect(
-                self.doTimerHide)
+            self.hideTimer_conn = self.hideTimer.timeout.connect(self.doTimerHide)
         except BaseException:
             self.hideTimer.callback.append(self.doTimerHide)
-        self.hideTimer.start(5000, True)
+        self.hideTimer.start(3000, True)  # Ridotto a 3 secondi come in Vavoo
         self.onShow.append(self.__onShow)
         self.onHide.append(self.__onHide)
 
@@ -832,7 +851,7 @@ class TvInfoBarShowHide():
     def startHideTimer(self):
         if self.__state == self.STATE_SHOWN and not self.__locked:
             self.hideTimer.stop()
-            self.hideTimer.start(5000, True)
+            self.hideTimer.start(3000, True)  # Ridotto a 3 secondi
 
     def doShow(self):
         self.hideTimer.stop()
@@ -919,7 +938,9 @@ class Playstream2(
         
         self.retry_count = 0
         self.max_retries = 3
-
+        self.service_handler = None
+        self.token_refresh_enabled = config.plugins.filmon.token_refresh.value
+        self.refresh_interval = config.plugins.filmon.token_refresh_interval.value * 1000
         for base in [
             InfoBarMenu, InfoBarNotifications, InfoBarBase,
             TvInfoBarShowHide, InfoBarAudioSelection, InfoBarSubtitleSupport
@@ -927,6 +948,30 @@ class Playstream2(
             base.__init__(self)
 
         InfoBarSeek.__init__(self, actionmap='InfobarSeekActions')
+        self.__event_tracker = ServiceEventTracker(
+            screen=self,
+            eventmap={
+                iPlayableService.evStart: self.serviceStarted,
+                iPlayableService.evEOF: self.__evEOF,
+                iPlayableService.evStopped: self.__evStopped,
+                iPlayableService.evUser: self.__evUser,
+            }
+        )
+            
+        if self.token_refresh_enabled:
+            self.refresh_timer = eTimer()
+            try:
+                self.refresh_timer_conn = self.refresh_timer.timeout.connect(self.preventive_refresh)
+            except:
+                self.refresh_timer.callback.append(self.preventive_refresh)
+            self.refresh_timer.start(self.refresh_interval, True)
+        
+        self.service_check_timer = eTimer()
+        try:
+            self.service_check_timer_conn = self.service_check_timer.timeout.connect(self.check_service_status)
+        except:
+            self.service_check_timer.callback.append(self.check_service_status)
+        self.service_check_timer.start(10000, True)
         self['actions'] = ActionMap(
             [
                 "WizardActions",
@@ -959,15 +1004,47 @@ class Playstream2(
             -1
         )
         self.srefInit = self.session.nav.getCurrentlyPlayingServiceReference()
+        self.log_service_events()
         self.openTest(self.servicetype, url)
         self.onClose.append(self.cancel)
 
+    def log_service_events(self):
+        """Log all service events for debugging"""
+        print("Available iPlayableService events:")
+        events = [
+            ('evStart', iPlayableService.evStart),
+            ('evEOF', iPlayableService.evEOF),
+            ('evUser', iPlayableService.evUser),
+        ]
+        
+        # Add only the events that actually exist
+        for name, value in events:
+            if hasattr(iPlayableService, name):
+                print("{}: {}".format(name, value))
+            else:
+                print("{}: NOT AVAILABLE".format(name))
+
     def preventive_refresh(self):
+        """Preventive token refresh"""
+        if not self.token_refresh_enabled:
+            return
+            
+        print("Performing preventive token refresh...")
         new_url = self.regenerate_stream_url()
         if new_url:
-            self.session.nav.stopService()
-            self.openTest(self.servicetype, new_url)
-        self.refresh_timer.start(300000, True)
+            current_service = self.session.nav.getCurrentlyPlayingServiceReference()
+            if current_service and current_service.getPath():
+                print("Service is playing, updating URL...")
+                # Stop current service and restart with new URL
+                self.session.nav.stopService()
+                self.openTest(self.servicetype, new_url)
+            else:
+                print("Service is not playing, cannot update URL.")
+        
+        # Reschedule timer with configured interval
+        if self.token_refresh_enabled:
+            self.refresh_interval = config.plugins.filmon.token_refresh_interval.value * 1000
+            self.refresh_timer.start(self.refresh_interval, True)
 
     def openTest(self, servicetype, url):
         try:
@@ -981,13 +1058,36 @@ class Playstream2(
 
             self.show()
             self.state = self.STATE_PLAYING
-            if self.state == self.STATE_PLAYING:
-                self.show_help_overlay()
+            
+            # Restart refresh timer
+            if hasattr(self, 'refresh_timer') and self.token_refresh_enabled:
+                self.refresh_timer.start(self.refresh_interval, True)
 
         except Exception as e:
             print("Error in openTest:", str(e))
+            # Do not call handle_stream_error here to avoid infinite loops
+            # Instead, show a message to the user
             self.session.open(MessageBox, _("Error playing stream"), MessageBox.TYPE_INFO)
-            self.close()
+
+    def restart_stream(self, new_url):
+        """Restart stream with new URL"""
+        try:
+            self.session.nav.stopService()
+            # Small pause to allow the system to stabilize
+            import time
+            time.sleep(1)
+            
+            self.openTest(self.servicetype, new_url)
+            
+        except Exception as e:
+            print("Error restarting stream: " + str(e))
+            # If restart fails, wait a bit and retry
+            self.timer = eTimer()
+            try:
+                self.timer_conn = self.timer.timeout.connect(lambda: self.restart_stream(new_url))
+            except:
+                self.timer.callback.append(lambda: self.restart_stream(new_url))
+            self.timer.start(3000, True)  # Delay of 3 seconds before retry
 
     def up(self):
         pass
@@ -1075,6 +1175,81 @@ class Playstream2(
             self.url = base_url.format(edge_server, channelID, 'high', token)
             self.openTest(self.servicetype, self.url)
 
+    def serviceStarted(self):
+        """Service successfully started"""
+        self.retry_count = 0
+        import time
+        print("Service started successfully at", time.strftime("%H:%M:%S"))
+        service = self.session.nav.getCurrentService()
+        if service:
+            info = service.info()
+            print("Service info:", info.getInfoString(iServiceInformation.sServiceref))
+
+    def __evEOF(self):
+        """End of stream reached"""
+        print("EOF detected, attempting to reconnect...")
+        self.handle_stream_error()
+
+    def __evUser(self, event):
+        """User events/errors"""
+        try:
+            print("User event received: " + str(event))
+            # GST_ERROR is typically evUser + 12
+            if event == iPlayableService.evUser + 12:
+                print("GStreamer error detected, attempting to reconnect...")
+                self.handle_stream_error()
+            # Other user events can be handled here
+            else:
+                print("Unknown user event: " + str(event))
+        except Exception as e:
+            print("Error in user event handler: " + str(e))
+
+    def check_service_status(self):
+        """Periodically check service status"""
+        service = self.session.nav.getCurrentService()
+        if service is None:
+            print("Service is None, attempting to reconnect...")
+            self.handle_stream_error()
+            return
+        
+        # Check if the service is still valid
+        ref = self.session.nav.getCurrentlyPlayingServiceReference()
+        if ref and ref.getPath():
+            # Service is active, continue monitoring
+            self.service_check_timer.start(10000, True)
+        else:
+            print("Service reference is invalid, attempting to reconnect...")
+            self.handle_stream_error()
+
+    def __evStopped(self):
+        """Service stopped"""
+        print("Service stopped")
+
+    def handle_stream_error(self):
+        """Handle stream errors and attempt to reconnect"""
+        if self.retry_count < self.max_retries:
+            self.retry_count += 1
+            print("Attempting reconnect {}/{}".format(self.retry_count, self.max_retries))
+            
+            # Temporarily stop all timers
+            if hasattr(self, 'refresh_timer') and self.token_refresh_enabled:
+                self.refresh_timer.stop()
+            if hasattr(self, 'service_check_timer'):
+                self.service_check_timer.stop()
+            
+            # Regenerate URL and restart
+            new_url = self.regenerate_stream_url()
+            if new_url:
+                print("New URL generated: {}...".format(new_url[:100]))
+                # Use a direct call instead of a timer to avoid delays
+                self.restart_stream(new_url)
+            else:
+                self.session.open(MessageBox, _("Cannot regenerate stream URL"), MessageBox.TYPE_ERROR)
+                self.close()
+        else:
+            self.session.open(MessageBox, _("Maximum reconnection attempts reached"), MessageBox.TYPE_ERROR)
+            self.close()
+
     def doEofInternal(self, playing):
         if playing and self.retry_count < self.max_retries:
             self.retry_count += 1
@@ -1088,21 +1263,11 @@ class Playstream2(
         else:
             self.close()
 
-    def __evEOF(self):
-        self.end = True
-        self.doEofInternal(True)
-
     def retry_playback(self):
-        if self.retry_count < self.max_retries:
-            self.retry_count += 1
-            print("Tentativo di riconnessione", self.retry_count)
-
-            self.retry_timer = eTimer()
-            try:
-                self.retry_timer_conn = self.retry_timer.timeout.connect(self.do_retry)
-            except AttributeError:
-                self.retry_timer.callback.append(self.do_retry)
-            self.retry_timer.start(2000, True)
+        new_url = self.regenerate_stream_url()
+        if new_url:
+            self.session.nav.stopService()
+            self.openTest(self.servicetype, new_url)
         else:
             self.close()
 
@@ -1120,7 +1285,7 @@ class Playstream2(
             if not session:
                 return None
 
-            api_url = f'https://eu-api.filmon.com/api/channel/{self.channelID}?session_key={session}'
+            api_url = 'https://eu-api.filmon.com/api/channel/{0}?session_key={1}'.format(self.channelID, session)
             headers = {
                 'User-Agent': USER_AGENT,
                 'Referer': 'http://www.filmon.com',
@@ -1135,20 +1300,29 @@ class Playstream2(
 
             data = json_loads(content)
             streams = data.get('streams', [])
+            
+            # First, try to find a valid HLS stream
+            for stream in streams:
+                stream_url = stream.get('url', '')
+                if '.m3u8' in stream_url and 'id=' in stream_url:
+                    clean_url = stream_url.replace('\\', '')
+                    return clean_url
+            
+            # Fallback: build URL manually
             token = None
             for stream in streams:
                 url = stream.get('url', '')
                 if 'id=' in url:
-                    token = url.split('id=')[1]
+                    token = url.split('id=')[1].split('&')[0].split('/')[0]
                     break
 
             if token:
-                base_url = "http://edge{}.filmon.com/live/{}.{}.stream/playlist.m3u8?id={}"
+                base_url = "http://edge{0}.filmon.com/live/{1}.{2}.stream/playlist.m3u8?id={3}"
                 edge_server = random.randint(1300, 1400)
                 return base_url.format(edge_server, self.channelID, 'high', token)
         except Exception as e:
-            print("Errore rigenerazione stream:", str(e))
-
+            print("Error regenerating stream: " + str(e))
+        
         return None
 
     def playpauseService(self):
@@ -1175,8 +1349,6 @@ class Playstream2(
                     self.session.nav.playService(current_ref)
                     self.show()
                     self.state = self.STATE_PLAYING
-                    if self.state == self.STATE_PLAYING:
-                        self.show_help_overlay()
                     print("[DEBUG]Info: Playback resumed (pause not supported)")
             return
 
@@ -1194,6 +1366,51 @@ class Playstream2(
         except Exception as e:
             print("[ERROR]: Play/pause error: " + str(e))
             self.show_error(_("Play/pause not supported for this stream"))
+
+    """
+    # def playpauseService(self):
+        # service = self.session.nav.getCurrentService()
+        # if not service:
+            # print("[WARNING] No current service")
+            # return
+
+        # pauseable = service.pause()
+        # if pauseable is None:
+            # print("[WARNING] Service is not pauseable")
+            # # Instead of failing, just stop and restart the service
+            # if self.state == self.STATE_PLAYING:
+                # current_ref = self.session.nav.getCurrentlyPlayingServiceReference()
+                # if current_ref:
+                    # self.session.nav.stopService()
+                    # self.state = self.STATE_PAUSED
+                    # print("[DEBUG]Info: Playback stopped (pause not supported)")
+
+            # elif self.state == self.STATE_PAUSED:
+                # current_ref = self.session.nav.getCurrentlyPlayingServiceReference()
+                # if current_ref:
+                    # self.session.nav.playService(current_ref)
+                    # self.show()
+                    # self.state = self.STATE_PLAYING
+                    # if self.state == self.STATE_PLAYING:
+                        # self.show_help_overlay()
+                    # print("[DEBUG]Info: Playback resumed (pause not supported)")
+            # return
+
+        # try:
+            # if self.state == self.STATE_PLAYING:
+                # if hasattr(pauseable, "pause"):
+                    # pauseable.pause()
+                    # self.state = self.STATE_PAUSED
+                    # print("[DEBUG]Info: Playback paused")
+            # elif self.state == self.STATE_PAUSED:
+                # if hasattr(pauseable, "play"):
+                    # pauseable.play()
+                    # self.state = self.STATE_PLAYING
+                    # print("[DEBUG]Info: Playback resumed")
+        # except Exception as e:
+            # print("[ERROR]: Play/pause error: " + str(e))
+            # self.show_error(_("Play/pause not supported for this stream"))
+    """
 
     def show_error(self, message):
         """Show error message and close player"""
@@ -1219,8 +1436,18 @@ class Playstream2(
             self.doShow()
 
     def cancel(self, *args):
+        if hasattr(self, 'refresh_timer') and self.token_refresh_enabled:
+            self.refresh_timer.stop()
+        
+        if hasattr(self, 'timer'):
+            self.timer.stop()
+        
+        if hasattr(self, 'service_check_timer'):
+            self.service_check_timer.stop()
+        
         if exists('/tmp/hls.avi'):
             remove('/tmp/hls.avi')
+        
         self.session.nav.stopService()
         if self.srefInit:
             self.session.nav.playService(self.srefInit)
@@ -1273,7 +1500,7 @@ class FilmonInfo(Screen):
         if self.scroll_pos >= len(lines):
             self.scroll_pos = 0
             
-        display_text = '\n'.join(lines[self.scroll_pos:self.scroll_pos+20])
+        display_text = '\n'.join(lines[self.scroll_pos:self.scroll_pos + 20])
         self['text'].setText(display_text)
 
     def finishLayout(self):
@@ -1307,62 +1534,6 @@ class FilmonInfo(Screen):
         self.updateText()
 
 
-class FilmonInfo2(Screen):
-    def __init__(self, session):
-        self.session = session
-        skin = skin_info
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-
-        Screen.__init__(self, session)
-
-        name = _('WELCOME TO FILMON PLUGIN BY LULULLA')
-        self['poster'] = Pixmap()
-        self['title'] = Label(name)
-        self['text'] = MenuList([])
-
-        self['actions'] = ActionMap(['OkCancelActions'], {
-            'ok': self.close,
-            'cancel': self.close
-        }, -2)
-
-        self.onLayoutFinish.append(self.finishLayout)
-
-    def finishLayout(self):
-        self.showHelp()
-
-    def showHelp(self):
-        help_lines = [
-            "Filmon Plugin",
-            "Version: " + CURR_VERSION,
-            "Created by: Lululla",
-            "License: GPL-3.0-or-later",
-            "",
-            "Features:",
-            " - Access Filmon content",
-            " - Browse categories, programs, and videos",
-            " - Play streaming video",
-            " - JSON API integration",
-            " - Debug logging",
-            " - User-friendly interface",
-            "",
-            "Credits:",
-            " - Original development by Lululla",
-            "",
-            "Usage:",
-            " Press OK to play the selected video",
-            " Press Back to return",
-            "",
-            "Enjoy Filmon streaming!"
-        ]
-        
-        list_items = []
-        for line in help_lines:
-            list_items.append((line,))
-            
-        self['text'].setList(list_items)
-
-
 def main(session, **kwargs):
     try:
         session.open(filmon)
@@ -1372,9 +1543,15 @@ def main(session, **kwargs):
         pass
 
 
+def setup(session, **kwargs):
+    session.open(FilmonSettings)
+
+
 def Plugins(**kwargs):
     icona = 'plugin.png'
     extDescriptor = PluginDescriptor(name='Filmon Player', description=DESC_PLUGIN, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=icona, fnc=main)
+    setupDescriptor = PluginDescriptor(name='Filmon Setup', description="Configure Filmon settings", where=PluginDescriptor.WHERE_PLUGINMENU, icon=icona, fnc=setup)
     result = [PluginDescriptor(name=TITLE_PLUG, description=DESC_PLUGIN, where=PluginDescriptor.WHERE_PLUGINMENU, icon=icona, fnc=main)]
     result.append(extDescriptor)
+    result.append(setupDescriptor)
     return result
