@@ -130,7 +130,7 @@ try:
     from twisted.internet import ssl
     from twisted.internet._sslverify import ClientTLSOptions
     sslverify = True
-except:
+except BaseException:
     sslverify = False
 
 if sslverify:
@@ -162,7 +162,7 @@ def isStreamlinkAvailable():
         from os import popen
         popen('streamlink --version')
         return True
-    except:
+    except BaseException:
         return False
 
 
@@ -218,7 +218,11 @@ def show_(name, link, img, session, description):
         icon_pos, icon_size = (3, 3), (40, 40)
         text_pos, text_size = (70, 0), (500, 50)
 
-    res.append(MultiContentEntryPixmapAlphaTest(pos=icon_pos, size=icon_size, png=loadPNG(page1)))
+    res.append(
+        MultiContentEntryPixmapAlphaTest(
+            pos=icon_pos,
+            size=icon_size,
+            png=loadPNG(page1)))
     res.append(MultiContentEntryText(
         pos=text_pos,
         size=text_size,
@@ -397,7 +401,7 @@ class filmon(Screen):
         try:
             start = page_content.find('<ul class="group-channels"', 0)
             end = page_content.find('<div id="footer">', start)
-        except:
+        except BaseException:
             start = page_content.find(b'<ul class="group-channels"', 0)
             end = page_content.find(b'<div id="footer">', start)
 
@@ -424,7 +428,8 @@ class filmon(Screen):
 
             pic = ''
             self.category_list.append(show_(name, url, img, sessionx, pic))
-            self.current_list_items = [(item[0], item[1]) for item in self.category_list]
+            self.current_list_items = [(item[0], item[1])
+                                       for item in self.category_list]
 
         self['menulist'].l.setList(self.category_list)
         self['menulist'].moveToIndex(0)
@@ -447,7 +452,8 @@ class filmon(Screen):
             return
 
         # Try API first
-        api_url = 'https://eu-api.filmon.com/api/group/' + group_id + '?session_key=' + session
+        api_url = 'https://eu-api.filmon.com/api/group/' + \
+            group_id + '?session_key=' + session
         try:
             headers = {
                 'User-Agent': USER_AGENT,
@@ -467,11 +473,20 @@ class filmon(Screen):
                     channel_id = channel.get('id', '')
                     title = channel.get('title', '')
                     description = channel.get('description', '')
-                    img = channel.get('big_logo', '') or channel.get('logo', '')
+                    img = channel.get(
+                        'big_logo', '') or channel.get(
+                        'logo', '')
                     if img:
                         img = img.replace('\\', '')
-                    self.category_list.append(show_(title, channel_id, img, session, description))
-                    self.current_list_items = [(item[0], item[1]) for item in self.category_list]
+                    self.category_list.append(
+                        show_(
+                            title,
+                            channel_id,
+                            img,
+                            session,
+                            description))
+                    self.current_list_items = [
+                        (item[0], item[1]) for item in self.category_list]
 
                 self['menulist'].l.setList(self.category_list)
                 self['menulist'].moveToIndex(0)
@@ -500,8 +515,10 @@ class filmon(Screen):
             for channel_id, img, title in matches:
                 img = img.replace('\\', '')
                 title = html_unescape(title)
-                self.category_list.append(show_(title, channel_id, img, session, ''))
-                self.current_list_items = [(item[0], item[1]) for item in self.category_list]
+                self.category_list.append(
+                    show_(title, channel_id, img, session, ''))
+                self.current_list_items = [
+                    (item[0], item[1]) for item in self.category_list]
 
             self['menulist'].l.setList(self.category_list)
             self['menulist'].moveToIndex(0)
@@ -515,7 +532,12 @@ class filmon(Screen):
 
     def onHlsSelected(self, selected_url, channelID, index, currentList):
         if selected_url:
-            self.play_that_shit(selected_url, channelID, 'hls', index, currentList)
+            self.play_that_shit(
+                selected_url,
+                channelID,
+                'hls',
+                index,
+                currentList)
 
     def ok(self):
         try:
@@ -568,7 +590,8 @@ class filmon(Screen):
                         display_name = "%s (%s)" % (stream_name, quality)
                     else:
                         display_name = "HLS Stream"
-                    hls_streams.append({'url': clean_url, 'name': display_name})
+                    hls_streams.append(
+                        {'url': clean_url, 'name': display_name})
 
             current_index = self['menulist'].getSelectedIndex()
             current_list = self.current_list_items
@@ -576,11 +599,14 @@ class filmon(Screen):
             if hls_streams:
                 if len(hls_streams) > 1:
                     self.session.openWithCallback(
-                        lambda selected: self.onHlsSelected(selected, channel_id, current_index, current_list),
+                        lambda selected: self.onHlsSelected(
+                            selected,
+                            channel_id,
+                            current_index,
+                            current_list),
                         HlsSelectionScreen,
                         hls_streams,
-                        title=_("Select stream quality")
-                    )
+                        title=_("Select stream quality"))
                 else:
                     self.play_that_shit(
                         str(hls_streams[0]['url']),
@@ -623,7 +649,13 @@ class filmon(Screen):
                 MessageBox.TYPE_INFO
             )
 
-    def play_that_shit(self, url, channel_id, stream_type, index=None, current_list=None):
+    def play_that_shit(
+            self,
+            url,
+            channel_id,
+            stream_type,
+            index=None,
+            current_list=None):
         if index is None:
             index = self['menulist'].getSelectedIndex()
         if current_list is None:
@@ -687,8 +719,15 @@ class filmon(Screen):
                             sni_factory,
                             timeout=5
                         ).addCallback(self.downloadPic, TMP_IMAGE).addErrback(self.downloadError)
+                                                  
+                                               
                     else:
                         downloadPage(pixmap_url, TMP_IMAGE).addCallback(self.downloadPic, TMP_IMAGE).addErrback(self.downloadError)
+                                       
+                                                   
+                                             
+                                                  
+                                               
                 except Exception as ex:
                     print("Error: can't find file or read data", ex)
 
@@ -718,6 +757,7 @@ class filmon(Screen):
         self.picload = ePicLoad()
         scale = AVSwitch().getFramebufferScale()
 
+                             
         self.picload.setPara([size.width(), size.height(), scale[0], scale[1], 0, 1, '#00000000'])
 
         if exists('/var/lib/dpkg/status'):
@@ -919,6 +959,14 @@ class Playstream2(
     screen_timeout = 5000
 
     def __init__(self, session, name, url, channelID, stream_type, index, currentList):
+                 
+                    
+                 
+                
+                      
+                        
+                  
+                         
         Screen.__init__(self, session)
         
         self.session = session
@@ -962,14 +1010,14 @@ class Playstream2(
             self.refresh_timer = eTimer()
             try:
                 self.refresh_timer_conn = self.refresh_timer.timeout.connect(self.preventive_refresh)
-            except:
+            except BaseException:
                 self.refresh_timer.callback.append(self.preventive_refresh)
             self.refresh_timer.start(self.refresh_interval, True)
         
         self.service_check_timer = eTimer()
         try:
             self.service_check_timer_conn = self.service_check_timer.timeout.connect(self.check_service_status)
-        except:
+        except BaseException:
             self.service_check_timer.callback.append(self.check_service_status)
         self.service_check_timer.start(10000, True)
         self['actions'] = ActionMap(
@@ -1065,6 +1113,7 @@ class Playstream2(
 
         except Exception as e:
             print("Error in openTest:", str(e))
+            
             # Do not call handle_stream_error here to avoid infinite loops
             # Instead, show a message to the user
             self.session.open(MessageBox, _("Error playing stream"), MessageBox.TYPE_INFO)
@@ -1085,9 +1134,16 @@ class Playstream2(
             self.timer = eTimer()
             try:
                 self.timer_conn = self.timer.timeout.connect(lambda: self.restart_stream(new_url))
-            except:
+            except BaseException:
                 self.timer.callback.append(lambda: self.restart_stream(new_url))
             self.timer.start(3000, True)  # Delay of 3 seconds before retry
+       
+                              
+                           
+                                          
+                                     
+                        
+                                                
 
     def up(self):
         pass
@@ -1119,15 +1175,18 @@ class Playstream2(
         channel_id = channel_info[0][1]
 
         # Get the session key (it's stored in the third element of the first item)
+               
         session = channel_info[0][3]
 
         if session and channel_id:
             url = 'https://eu-api.filmon.com/api/channel/' + str(channel_id) + "?session_key=" + session
+                                                           
             self.get_rtmp_update(url, channel_id)
 
     def get_rtmp_update(self, data, channelID):
         try:
             # Same logic as in the main get_rtmp method but for updating the current stream
+                            
             referer = 'http://www.filmon.com'
             headers = {
                 'User-Agent': USER_AGENT,
@@ -1257,6 +1316,7 @@ class Playstream2(
             self.retry_timer = eTimer()
             try:
                 self.retry_timer_conn = self.retry_timer.timeout.connect(self.retry_playback)
+                                        
             except AttributeError:
                 self.retry_timer.callback.append(self.retry_playback)
             self.retry_timer.start(2000, True)
@@ -1264,10 +1324,24 @@ class Playstream2(
             self.close()
 
     def retry_playback(self):
+            
         new_url = self.regenerate_stream_url()
         if new_url:
             self.session.nav.stopService()
             self.openTest(self.servicetype, new_url)
+       
+                                               
+                                 
+                                                                 
+
+                                       
+                
+                                                                         
+                                  
+                                  
+                                                               
+                                              
+                                                
         else:
             self.close()
 
@@ -1319,6 +1393,7 @@ class Playstream2(
             if token:
                 base_url = "http://edge{0}.filmon.com/live/{1}.{2}.stream/playlist.m3u8?id={3}"
                 edge_server = random.randint(1300, 1400)
+                                       
                 return base_url.format(edge_server, self.channelID, 'high', token)
         except Exception as e:
             print("Error regenerating stream: " + str(e))
@@ -1500,6 +1575,10 @@ class FilmonInfo(Screen):
         if self.scroll_pos >= len(lines):
             self.scroll_pos = 0
             
+            
+       
+
+                                                
         display_text = '\n'.join(lines[self.scroll_pos:self.scroll_pos + 20])
         self['text'].setText(display_text)
 
@@ -1534,10 +1613,69 @@ class FilmonInfo(Screen):
         self.updateText()
 
 
+            
+       
+                          
+                                
+                              
+                        
+                                                           
+                                
+
+                                      
+
+                                                       
+                                 
+                                   
+                                   
+
+                                                          
+                             
+                                
+              
+
+                                                     
+
+                           
+                       
+
+                       
+                      
+                            
+                                       
+                                  
+                                        
+               
+                        
+                                       
+                                                         
+                                      
+                                      
+                               
+                                         
+               
+                       
+                                                 
+               
+                     
+                                                   
+                                    
+               
+                                     
+         
+
+                       
+                               
+                                      
+
+                                        
+
+
+                                                
 def main(session, **kwargs):
     try:
         session.open(filmon)
-    except:
+    except BaseException:
         import traceback
         traceback.print_exc()
         pass
@@ -1549,9 +1687,25 @@ def setup(session, **kwargs):
 
 def Plugins(**kwargs):
     icona = 'plugin.png'
+            
     extDescriptor = PluginDescriptor(name='Filmon Player', description=DESC_PLUGIN, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=icona, fnc=main)
     setupDescriptor = PluginDescriptor(name='Filmon Setup', description="Configure Filmon settings", where=PluginDescriptor.WHERE_PLUGINMENU, icon=icona, fnc=setup)
     result = [PluginDescriptor(name=TITLE_PLUG, description=DESC_PLUGIN, where=PluginDescriptor.WHERE_PLUGINMENU, icon=icona, fnc=main)]
+       
+                                     
+                             
+                                
+                                                    
+                   
+                 
+              
+                         
+                            
+                                    
+                                                    
+                       
+                      
+                                                
     result.append(extDescriptor)
     result.append(setupDescriptor)
     return result
