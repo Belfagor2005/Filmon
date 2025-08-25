@@ -1354,7 +1354,8 @@ class Playstream2(
         session = channel_info[0][3]
 
         if session and channel_id:
-            url = "https://eu-api.filmon.com/api/channel/" + str(channel_id) + "?session_key=" + session
+            url = "https://eu-api.filmon.com/api/channel/" + \
+                str(channel_id) + "?session_key=" + session
             self.get_rtmp_update(url, channel_id)
 
     def get_rtmp_update(self, data, channelID):
@@ -1624,7 +1625,8 @@ class Playstream2(
             if not session:
                 return None
 
-            api_url = "https://eu-api.filmon.com/api/channel/" + str(self.channelID) + "?session_key=" + session
+            api_url = "https://eu-api.filmon.com/api/channel/" + \
+                str(self.channelID) + "?session_key=" + session
             headers = {
                 "User-Agent": USER_AGENT,
                 "Referer": "http://www.filmon.com",
@@ -1656,7 +1658,8 @@ class Playstream2(
             if token:
                 base_url = "http://edge{}.filmon.com/live/{}.{}.stream/playlist.m3u8?id={}"
                 edge_server = random.randint(1300, 1400)
-                return base_url.format(edge_server, self.channelID, "high", token)
+                return base_url.format(
+                    edge_server, self.channelID, "high", token)
 
         except HTTPError as e:
             if e.code == 403:
