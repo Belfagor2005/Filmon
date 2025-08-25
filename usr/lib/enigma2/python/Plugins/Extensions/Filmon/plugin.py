@@ -670,15 +670,25 @@ class filmon(Screen):
             stream_type,
             index=None,
             current_list=None):
+
+        # If no index is provided, get it from the menulist
         if index is None:
             index = self['menulist'].getSelectedIndex()
+
+        # If no current list is provided, use the internal one
         if current_list is None:
             current_list = self.current_list_items
 
+        # Get the selected item and update internal state
         selected_item = current_list[index]
         name = selected_item[0][0]
+        self.channelID = channel_id
+        self.current_channel_url = url
+        self.current_stream_url = url
 
         print("HLS URL player:", str(url))
+
+        # Start the player
         self.session.open(
             Playstream2,
             name,
@@ -997,6 +1007,9 @@ class Playstream2(
         self.name = name
         self.url = url
         self.channelID = channelID
+        self.current_channel_url = url
+        self.current_stream_url = url
+
         self.stream_type = stream_type
 
         self.state = self.STATE_PLAYING
@@ -1205,35 +1218,28 @@ class Playstream2(
         self.is_buffering = False
 
     def preventive_refresh(self):
-        """Preventive token refresh with improved error handling"""
         if not self.token_refresh_enabled:
             return
 
-        print("Performing preventive token refresh...")
-        new_url = self.regenerate_stream_url()
+        print("Performing preventive token refresh for current channel...")
 
+        new_url = self.regenerate_stream_url()
         if new_url:
             try:
                 current_service = self.session.nav.getCurrentlyPlayingServiceReference()
                 if current_service and current_service.getPath():
-                    print("Service is playing, updating URL...")
-
-                    # Stop current service and restart with new URL
+                    print("Service is playing, updating URL for current channel...")
                     self.session.nav.stopService()
                     from time import sleep
                     sleep(0.1)
                     self.openTest(self.servicetype, new_url)
-
+                    self.current_stream_url = new_url
             except Exception as e:
                 print("Error in preventive refresh: " + str(e))
-                # If refresh fails, do not stop the current service
-                pass
         else:
-            print("Cannot get valid URL for refresh, keeping current stream")
+            print("Cannot get valid URL for refresh")
 
-        # Reschedule the timer with configured interval
         if self.token_refresh_enabled:
-            self.refresh_interval = config.plugins.filmon.token_refresh_interval.value * 1000
             self.refresh_timer.start(self.refresh_interval, True)
 
     def prefetch_next_token(self):
@@ -1338,55 +1344,48 @@ class Playstream2(
         if self.currentindex >= len(self.list) or self.currentindex < 0:
             return
 
-        # Get the channel info from the list
         channel_info = self.list[self.currentindex]
         self.name = channel_info[0][0]
         channel_id = channel_info[0][1]
 
-        # Get the session key (it's stored in the third element of the first
-        # item)
+        self.channelID = channel_id
+        self.current_channel_url = channel_info[0][1]
 
         session = channel_info[0][3]
 
         if session and channel_id:
-            url = 'https://eu-api.filmon.com/api/channel/' + \
-                str(channel_id) + "?session_key=" + session
-
+            url = "https://eu-api.filmon.com/api/channel/" + str(channel_id) + "?session_key=" + session
             self.get_rtmp_update(url, channel_id)
 
     def get_rtmp_update(self, data, channelID):
         try:
-            # Same logic as in the main get_rtmp method but for updating the
-            # current stream
-
-            referer = 'http://www.filmon.com'
+            referer = "http://www.filmon.com"
             headers = {
-                'User-Agent': USER_AGENT,
-                'Referer': referer,
-                'X-Requested-With': 'XMLHttpRequest'
+                "User-Agent": USER_AGENT,
+                "Referer": referer,
+                "X-Requested-With": "XMLHttpRequest"
             }
             req = Request(data, headers=headers)
             response = urlopen(req, timeout=10)
             content = response.read()
             if PY3:
-                content = content.decode('utf-8')
+                content = content.decode("utf-8")
             json_data = json_loads(content)
 
             hls_urls = []
-            streams = json_data.get('streams', [])
+            streams = json_data.get("streams", [])
 
             for stream in streams:
-                url = stream.get('url', '')
-                if '.m3u8' in url:
-                    hls_url = url.replace('\\', '')
-                    hls_urls.append({'url': hls_url})
+                url = stream.get("url", "")
+                if ".m3u8" in url:
+                    hls_url = url.replace("\\", "")
+                    hls_urls.append({"url": hls_url})
 
             if hls_urls:
-                # Use the first available HLS stream
-                self.url = hls_urls[0]['url']
+                self.url = hls_urls[0]["url"]
+                self.current_stream_url = self.url
                 self.openTest(self.servicetype, self.url)
             else:
-                # Fallback to manual URL construction
                 self.fallback_hls_update(channelID, streams)
         except Exception as ex:
             print("Error updating stream:", ex)
@@ -1620,62 +1619,53 @@ class Playstream2(
             self.close()
 
     def regenerate_stream_url(self):
-        """Regenerate the stream URL"""
         try:
-            # Get a new session
             session = get_session()
             if not session:
-                print("Cannot get valid session")
                 return None
 
-            api_url = 'https://eu-api.filmon.com/api/channel/{}?session_key={}'.format(
-                self.channelID, session)
+            api_url = "https://eu-api.filmon.com/api/channel/" + str(self.channelID) + "?session_key=" + session
             headers = {
-                'User-Agent': USER_AGENT,
-                'Referer': 'http://www.filmon.com',
-                'X-Requested-With': 'XMLHttpRequest'
+                "User-Agent": USER_AGENT,
+                "Referer": "http://www.filmon.com",
+                "X-Requested-With": "XMLHttpRequest"
             }
 
             req = Request(api_url, headers=headers)
             response = urlopen(req, timeout=10)
             content = response.read()
             if PY3:
-                content = content.decode('utf-8')
+                content = content.decode("utf-8")
 
             data = json_loads(content)
-            streams = data.get('streams', [])
+            streams = data.get("streams", [])
 
-            # Search first for a valid HLS stream
             for stream in streams:
-                stream_url = stream.get('url', '')
-                if '.m3u8' in stream_url and 'id=' in stream_url:
-                    clean_url = stream_url.replace('\\', '')
+                stream_url = stream.get("url", "")
+                if ".m3u8" in stream_url and "id=" in stream_url:
+                    clean_url = stream_url.replace("\\", "")
                     return clean_url
 
-            # Fallback to manual URL construction
             token = None
             for stream in streams:
-                url = stream.get('url', '')
-                if 'id=' in url:
-                    token = url.split('id=')[1].split('&')[0].split('/')[0]
+                url = stream.get("url", "")
+                if "id=" in url:
+                    token = url.split("id=")[1].split("&")[0].split("/")[0]
                     break
 
             if token:
                 base_url = "http://edge{}.filmon.com/live/{}.{}.stream/playlist.m3u8?id={}"
-                import random
                 edge_server = random.randint(1300, 1400)
-                return base_url.format(
-                    edge_server, self.channelID, 'high', token)
+                return base_url.format(edge_server, self.channelID, "high", token)
 
         except HTTPError as e:
             if e.code == 403:
                 print("HTTP 403 Forbidden error - session might be expired")
-                # Regenerate the global session and retry
                 global sessionx
                 sessionx = get_session()
                 return self.regenerate_stream_url()
             else:
-                print("HTTP Error {}: {}".format(e.code, e.reason))
+                print("HTTP Error " + str(e.code) + ": " + str(e.reason))
         except Exception as e:
             print("Error regenerating stream: " + str(e))
 
