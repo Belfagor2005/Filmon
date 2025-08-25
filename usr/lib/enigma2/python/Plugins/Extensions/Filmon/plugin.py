@@ -1018,9 +1018,10 @@ class Playstream2(
 
         self.buffer_timer = eTimer()
         try:
-            self.buffer_timer_conn = self.buffer_timer.timeout.connect(self.end_buffering)
-        except:
-            self.buffer_timer.callback.append(self.end_buffering)         
+            self.buffer_timer_conn = self.buffer_timer.timeout.connect(
+                self.end_buffering)
+        except BaseException:
+            self.buffer_timer.callback.append(self.end_buffering)
         if self.token_refresh_enabled:
             self.refresh_timer = eTimer()
             try:
@@ -1093,7 +1094,12 @@ class Playstream2(
         """Show buffering indicator"""
         if not self.is_buffering:
             self.is_buffering = True
-            self.session.openWithCallback(self.buffering_callback, MessageBox, _("Buffering..."), MessageBox.TYPE_INFO, timeout=2)
+            self.session.openWithCallback(
+                self.buffering_callback,
+                MessageBox,
+                _("Buffering..."),
+                MessageBox.TYPE_INFO,
+                timeout=2)
 
     def end_buffering(self):
         """Hide buffering indicator"""
