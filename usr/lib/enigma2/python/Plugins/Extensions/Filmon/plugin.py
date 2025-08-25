@@ -996,6 +996,7 @@ class Playstream2(
         self.retry_count = 0
         self.max_retries = 3
         self.service_handler = None
+        self.is_buffering = False
         self.token_refresh_enabled = config.plugins.filmon.token_refresh.value
         self.refresh_interval = config.plugins.filmon.token_refresh_interval.value * 1000
         for base in [
@@ -1015,6 +1016,11 @@ class Playstream2(
             }
         )
 
+        self.buffer_timer = eTimer()
+        try:
+            self.buffer_timer_conn = self.buffer_timer.timeout.connect(self.end_buffering)
+        except:
+            self.buffer_timer.callback.append(self.end_buffering)         
         if self.token_refresh_enabled:
             self.refresh_timer = eTimer()
             try:
@@ -1082,6 +1088,20 @@ class Playstream2(
                 print("{}: {}".format(name, value))
             else:
                 print("{}: NOT AVAILABLE".format(name))
+
+    def start_buffering(self):
+        """Show buffering indicator"""
+        if not self.is_buffering:
+            self.is_buffering = True
+            self.session.openWithCallback(self.buffering_callback, MessageBox, _("Buffering..."), MessageBox.TYPE_INFO, timeout=2)
+
+    def end_buffering(self):
+        """Hide buffering indicator"""
+        self.is_buffering = False
+
+    def buffering_callback(self, result=None):
+        """Callback per il buffering"""
+        self.is_buffering = False
 
     def preventive_refresh(self):
         """Preventive token refresh"""
@@ -1280,19 +1300,23 @@ class Playstream2(
 
     def check_service_status(self):
         """Periodically check service status"""
-        service = self.session.nav.getCurrentService()
-        if service is None:
-            print("Service is None, attempting to reconnect...")
-            self.handle_stream_error()
-            return
+        try:
+            service = self.session.nav.getCurrentService()
+            if service is None:
+                print("Service is None, attempting to reconnect...")
+                self.handle_stream_error()
+                return
 
-        # Check if the service is still valid
-        ref = self.session.nav.getCurrentlyPlayingServiceReference()
-        if ref and ref.getPath():
-            # Service is active, continue monitoring
-            self.service_check_timer.start(10000, True)
-        else:
-            print("Service reference is invalid, attempting to reconnect...")
+            # Check if the service reference is still valid
+            ref = self.session.nav.getCurrentlyPlayingServiceReference()
+            if ref and ref.valid():
+                # Service is active, continue monitoring after 5 seconds
+                self.service_check_timer.start(5000, True)
+            else:
+                print("Service reference is invalid, attempting to reconnect...")
+                self.handle_stream_error()
+        except Exception as e:
+            print("Error checking service status: " + str(e))
             self.handle_stream_error()
 
     def __evStopped(self):
