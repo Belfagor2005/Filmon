@@ -2,9 +2,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Filmon\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-17 18:03+0200\n"
+"POT-Creation-Date: 2025-08-24 21:26+0200\n"
 "PO-Revision-Date: \n"
-"Last-Translator: ))^^(( <>\n"
+"Last-Translator: Masta2002\n"
 "Language-Team: *\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -12,51 +12,91 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Poedit-SourceCharset: UTF-8\n"
-"X-Generator: Poedit 3.4.4\n"
+"X-Generator: Poedit 3.6\n"
 "X-Poedit-Basepath: ../../..\n"
 "X-Poedit-SearchPath-0: plugin.py\n"
 
-#: plugin.py:257
+#: plugin.py:287
 msgid "Exit"
-msgstr ""
+msgstr "Verlassen"
 
-#: plugin.py:328
-#, python-format
-msgid ""
-"New version %s is available\n"
-"\n"
-"Changelog: %s\n"
-"\n"
-"Press info_long or yellow_long button to start force updating."
-msgstr ""
-
-#: plugin.py:333
-#, python-format
-msgid ""
-"New version %s is available.\n"
-"\n"
-"Changelog: %s \n"
-"\n"
-"Do you want to install it now?"
-msgstr ""
-
-#: plugin.py:335
-msgid "Congrats! You already have the latest version..."
-msgstr ""
-
-#: plugin.py:345
-#, python-format
-msgid "Do you want to install update ( %s ) now?"
-msgstr ""
-
-#: plugin.py:354
-msgid "Update Aborted!"
-msgstr ""
-
-#: plugin.py:403
+#: plugin.py:363
 msgid "Try again later ..."
-msgstr ""
+msgstr "Versuche es später noch einmal ..."
 
-#: plugin.py:898
-msgid "For Stream Youtube coming soon!"
-msgstr ""
+#: plugin.py:428
+msgid "Session error, try again later ..."
+msgstr "Sitzungsfehler, versuchen Sie es später noch einmal ..."
+
+#: plugin.py:496
+msgid "Error loading channels"
+msgstr "Fehler beim Laden von Kanälen"
+
+#: plugin.py:564 plugin.py:717
+msgid "Select stream quality"
+msgstr "Streamqualität auswählen"
+
+#: plugin.py:604
+msgid "Could not get stream token"
+msgstr "Stream-Token konnte nicht abgerufen werden"
+
+#: plugin.py:723
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: plugin.py:724
+msgid "OK"
+msgstr "OK"
+
+#: plugin.py:989
+msgid "Error playing stream"
+msgstr "Fehler beim Abspielen des Streams"
+
+#: plugin.py:1196
+msgid "Play/pause not supported for this stream"
+msgstr "Wiedergabe/Pause wird für diesen Stream nicht unterstützt"
+
+#: plugin.py:1246 plugin.py:1319
+msgid "WELCOME TO FILMON PLUGIN BY LULULLA"
+msgstr "WILLKOMMEN BEI FILMON PLUGIN BY LULULLA"
+
+#, python-format
+#~ msgid ""
+#~ "New version %s is available\n"
+#~ "\n"
+#~ "Changelog: %s\n"
+#~ "\n"
+#~ "Press info_long or yellow_long button to start force updating."
+#~ msgstr ""
+#~ "Neue Version %s ist verfügbar\n"
+#~ "\n"
+#~ "Changelog: %s\n"
+#~ "\n"
+#~ "Drücken Sie die Tasten info_lang oder gelb_lang, um die Aktualisierung zu erzwingen."
+
+#, python-format
+#~ msgid ""
+#~ "New version %s is available.\n"
+#~ "\n"
+#~ "Changelog: %s \n"
+#~ "\n"
+#~ "Do you want to install it now?"
+#~ msgstr ""
+#~ "Neue Version %s ist verfügbar.\n"
+#~ "\n"
+#~ "Changelog: %s\n"
+#~ "\n"
+#~ "Möchten Sie sie jetzt installieren?"
+
+#~ msgid "Congrats! You already have the latest version..."
+#~ msgstr "Herzlichen Glückwunsch! Sie haben bereits die neueste Version..."
+
+#, python-format
+#~ msgid "Do you want to install update ( %s ) now?"
+#~ msgstr "Möchten Sie das Update ( %s ) jetzt installieren?"
+
+#~ msgid "Update Aborted!"
+#~ msgstr "Update Abgebrochen!"
+
+#~ msgid "For Stream Youtube coming soon!"
+#~ msgstr "Für Stream Youtube bald verfügbar!"
