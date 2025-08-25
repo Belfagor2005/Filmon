@@ -1058,7 +1058,8 @@ class Playstream2(
 
         self.prefetch_timer = eTimer()
         try:
-            self.prefetch_timer_conn = self.prefetch_timer.timeout.connect(self.prefetch_next_token)
+            self.prefetch_timer_conn = self.prefetch_timer.timeout.connect(
+                self.prefetch_next_token)
         except BaseException:
             self.prefetch_timer.callback.append(self.prefetch_next_token)
 
@@ -1066,16 +1067,20 @@ class Playstream2(
 
         self.fade_timer = eTimer()
         try:
-            self.fade_timer_conn = self.fade_timer.timeout.connect(self.fade_in)
+            self.fade_timer_conn = self.fade_timer.timeout.connect(
+                self.fade_in)
         except BaseException:
             self.fade_timer.callback.append(self.fade_in)
 
         self.connection_monitor_timer = eTimer()
         try:
-            self.connection_monitor_timer_conn = self.connection_monitor_timer.timeout.connect(self.monitor_connection)
+            self.connection_monitor_timer_conn = self.connection_monitor_timer.timeout.connect(
+                self.monitor_connection)
         except BaseException:
-            self.connection_monitor_timer.callback.append(self.monitor_connection)
-        self.connection_monitor_timer.start(30000, True)  # Controlla ogni 30 secondi
+            self.connection_monitor_timer.callback.append(
+                self.monitor_connection)
+        self.connection_monitor_timer.start(
+            30000, True)  # Controlla ogni 30 secondi
 
         self['actions'] = ActionMap(
             [
@@ -1137,17 +1142,18 @@ class Playstream2(
                 print("Connection monitor: Service is None, attempting to recover...")
                 self.handle_stream_failure()
                 return
-                
+
             # Check if the service reference is still valid
             ref = self.session.nav.getCurrentlyPlayingServiceReference()
             if not ref or not ref.valid():
-                print("Connection monitor: Service reference is invalid, attempting to recover...")
+                print(
+                    "Connection monitor: Service reference is invalid, attempting to recover...")
                 self.handle_stream_failure()
                 return
-                
+
         except Exception as e:
             print("Connection monitor error: " + str(e))
-        
+
         # Reschedule the monitoring
         self.connection_monitor_timer.start(30000, True)
 
@@ -1164,7 +1170,7 @@ class Playstream2(
             ]
             self["fade_overlay"] = self.fade_overlay
             self["fade_overlay"].show()
-            
+
             # Start fade-in after a short delay
             self.fade_timer.start(50, True)
         except BaseException:
@@ -1183,7 +1189,12 @@ class Playstream2(
         """Show buffering indicator"""
         if not self.is_buffering:
             self.is_buffering = True
-            self.session.openWithCallback(self.buffering_callback, MessageBox, _("Buffering..."), MessageBox.TYPE_INFO, timeout=2)
+            self.session.openWithCallback(
+                self.buffering_callback,
+                MessageBox,
+                _("Buffering..."),
+                MessageBox.TYPE_INFO,
+                timeout=2)
 
     def end_buffering(self):
         """Hide buffering indicator"""
@@ -1197,29 +1208,29 @@ class Playstream2(
         """Preventive token refresh with improved error handling"""
         if not self.token_refresh_enabled:
             return
-            
+
         print("Performing preventive token refresh...")
         new_url = self.regenerate_stream_url()
-        
+
         if new_url:
             try:
                 current_service = self.session.nav.getCurrentlyPlayingServiceReference()
                 if current_service and current_service.getPath():
                     print("Service is playing, updating URL...")
-                    
+
                     # Stop current service and restart with new URL
                     self.session.nav.stopService()
                     from time import sleep
                     sleep(0.1)
                     self.openTest(self.servicetype, new_url)
-                    
+
             except Exception as e:
                 print("Error in preventive refresh: " + str(e))
                 # If refresh fails, do not stop the current service
                 pass
         else:
             print("Cannot get valid URL for refresh, keeping current stream")
-        
+
         # Reschedule the timer with configured interval
         if self.token_refresh_enabled:
             self.refresh_interval = config.plugins.filmon.token_refresh_interval.value * 1000
@@ -1237,7 +1248,9 @@ class Playstream2(
                 print("Next token prefetched successfully")
 
             # Reschedule prefetch
-            self.prefetch_timer.start(self.refresh_interval - 10000, True)  # 10 seconds before refresh
+            self.prefetch_timer.start(
+                self.refresh_interval - 10000,
+                True)  # 10 seconds before refresh
 
         except Exception as e:
             print("Prefetch error: " + str(e))
@@ -1255,16 +1268,16 @@ class Playstream2(
                 ref = '4097:0:1:0:0:0:0:0:0:0:' + str(encoded_url)
                 sref = eServiceReference(ref)
                 sref.setName(self.name)
-                
+
                 # Stop current service only if different from the new one
                 current_ref = self.session.nav.getCurrentlyPlayingServiceReference()
                 if current_ref and current_ref.getPath() != ref:
                     self.session.nav.stopService()
-                
+
                 self.session.nav.playService(sref)
-            
+
             self.state = self.STATE_PLAYING
-            
+
             # Restart the refresh timer
             if hasattr(self, 'refresh_timer') and self.token_refresh_enabled:
                 self.refresh_timer.start(self.refresh_interval, True)
@@ -1289,14 +1302,14 @@ class Playstream2(
                 from time import sleep
                 self.session.nav.stopService()
                 sleep(0.03)
-                
+
                 encoded_url = new_url.replace(':', '%3a').replace(' ', '%20')
                 ref = '4097:0:1:0:0:0:0:0:0:0:' + str(encoded_url)
                 new_sref = eServiceReference(ref)
                 new_sref.setName(self.name)
-                
+
                 self.session.nav.playService(new_sref)
-                
+
         except Exception as e:
             print("Error restarting stream: " + str(e))
             self.handle_stream_error()
@@ -1417,17 +1430,21 @@ class Playstream2(
             # GST_ERROR è tipicamente evUser + 12
             if event == iPlayableService.evUser + 12:
                 print("GStreamer error detected, attempting to recover...")
-                # Non chiamare handle_stream_error immediatamente, prima verifica lo stato
+                # Non chiamare handle_stream_error immediatamente, prima
+                # verifica lo stato
                 service = self.session.nav.getCurrentService()
                 if service is None:
                     self.handle_stream_failure()
                 else:
-                    # Potrebbe essere un errore temporaneo, aspetta un po' prima di agire
+                    # Potrebbe essere un errore temporaneo, aspetta un po'
+                    # prima di agire
                     self.recovery_timer = eTimer()
                     try:
-                        self.recovery_timer_conn = self.recovery_timer.timeout.connect(self.check_stream_recovery)
+                        self.recovery_timer_conn = self.recovery_timer.timeout.connect(
+                            self.check_stream_recovery)
                     except BaseException:
-                        self.recovery_timer.callback.append(self.check_stream_recovery)
+                        self.recovery_timer.callback.append(
+                            self.check_stream_recovery)
                     self.recovery_timer.start(2000, True)
         except Exception as e:
             print(f"Error in user event handler: {str(e)}")
@@ -1473,13 +1490,13 @@ class Playstream2(
         if self.retry_count < self.max_retries:
             self.retry_count += 1
             print("Attempting reconnect {}/{}".format(self.retry_count, self.max_retries))
-            
+
             # Temporarily stop all timers
             if hasattr(self, 'refresh_timer') and self.token_refresh_enabled:
                 self.refresh_timer.stop()
             if hasattr(self, 'service_check_timer'):
                 self.service_check_timer.stop()
-            
+
             # Regenerate URL and restart
             new_url = self.regenerate_stream_url()
             if new_url:
@@ -1491,10 +1508,16 @@ class Playstream2(
                     # Fallback to traditional restart
                     self.restart_stream(new_url)
             else:
-                self.session.open(MessageBox, _("Cannot regenerate stream URL"), MessageBox.TYPE_ERROR)
+                self.session.open(
+                    MessageBox,
+                    _("Cannot regenerate stream URL"),
+                    MessageBox.TYPE_ERROR)
                 self.close()
         else:
-            self.session.open(MessageBox, _("Maximum reconnection attempts reached"), MessageBox.TYPE_ERROR)
+            self.session.open(
+                MessageBox,
+                _("Maximum reconnection attempts reached"),
+                MessageBox.TYPE_ERROR)
             self.close()
 
     def smooth_transition(self, new_url):
@@ -1502,27 +1525,27 @@ class Playstream2(
         try:
             # Fade out
             self.fade_out()
-            
+
             # Short pause for fade effect
             from time import sleep
             sleep(0.03)
-            
+
             # Prepare new service
             encoded_url = new_url.replace(':', '%3a').replace(' ', '%20')
             ref = '4097:0:1:0:0:0:0:0:0:0:' + str(encoded_url)
             new_sref = eServiceReference(ref)
             new_sref.setName(self.name)
-            
+
             # Replace the service
             self.session.nav.playService(new_sref)
-            
+
             # Short pause before fade in
             sleep(0.03)
             # Fade in
             self.fade_in()
-            
+
             return True
-            
+
         except Exception as e:
             print("Error in smooth transition: " + str(e))
             # Ensure content is visible again in case of error
@@ -1548,12 +1571,13 @@ class Playstream2(
         """Handle stream failures when preventive refresh fails"""
         if self.retry_count < self.max_retries:
             self.retry_count += 1
-            print("Stream failure detected, attempt {}/{}".format(self.retry_count, self.max_retries))
-            
+            print(
+                "Stream failure detected, attempt {}/{}".format(self.retry_count, self.max_retries))
+
             # Try to regenerate the session completely
             global sessionx
             sessionx = get_session()
-            
+
             # Retry refresh after a short delay
             self.timer = eTimer()
             try:
@@ -1563,7 +1587,10 @@ class Playstream2(
             self.timer.start(3000, True)
         else:
             print("Max retries reached, giving up")
-            self.session.open(MessageBox, _("Cannot restore stream connection"), MessageBox.TYPE_ERROR)
+            self.session.open(
+                MessageBox,
+                _("Cannot restore stream connection"),
+                MessageBox.TYPE_ERROR)
             self.close()
 
     def retry_stream(self):
@@ -1601,7 +1628,8 @@ class Playstream2(
                 print("Cannot get valid session")
                 return None
 
-            api_url = 'https://eu-api.filmon.com/api/channel/{}?session_key={}'.format(self.channelID, session)
+            api_url = 'https://eu-api.filmon.com/api/channel/{}?session_key={}'.format(
+                self.channelID, session)
             headers = {
                 'User-Agent': USER_AGENT,
                 'Referer': 'http://www.filmon.com',
@@ -1616,14 +1644,14 @@ class Playstream2(
 
             data = json_loads(content)
             streams = data.get('streams', [])
-            
+
             # Search first for a valid HLS stream
             for stream in streams:
                 stream_url = stream.get('url', '')
                 if '.m3u8' in stream_url and 'id=' in stream_url:
                     clean_url = stream_url.replace('\\', '')
                     return clean_url
-            
+
             # Fallback to manual URL construction
             token = None
             for stream in streams:
@@ -1636,8 +1664,9 @@ class Playstream2(
                 base_url = "http://edge{}.filmon.com/live/{}.{}.stream/playlist.m3u8?id={}"
                 import random
                 edge_server = random.randint(1300, 1400)
-                return base_url.format(edge_server, self.channelID, 'high', token)
-                
+                return base_url.format(
+                    edge_server, self.channelID, 'high', token)
+
         except HTTPError as e:
             if e.code == 403:
                 print("HTTP 403 Forbidden error - session might be expired")
@@ -1649,7 +1678,7 @@ class Playstream2(
                 print("HTTP Error {}: {}".format(e.code, e.reason))
         except Exception as e:
             print("Error regenerating stream: " + str(e))
-        
+
         return None
 
     def playpauseService(self):
