@@ -57,3 +57,32 @@ msgstr ""
 #: plugin.py:1246 plugin.py:1319
 msgid "WELCOME TO FILMON PLUGIN BY LULULLA"
 msgstr ""
+
+# New strings - GitHub Action
+
+msgid "Buffering..."
+msgstr ""
+
+msgid "Cannot regenerate stream URL"
+msgstr ""
+
+msgid "Cannot restore stream connection"
+msgstr ""
+
+msgid "Enable Token Update refresh on Player."
+msgstr ""
+
+msgid "Enable token auto-refresh"
+msgstr ""
+
+msgid "Filmon Settings"
+msgstr ""
+
+msgid "Maximum reconnection attempts reached"
+msgstr ""
+
+msgid "Set Timer Refresh update Player."
+msgstr ""
+
+msgid "Token refresh interval (seconds)"
+msgstr ""

@@ -16,49 +16,89 @@ msgstr ""
 "X-Poedit-Basepath: ../../..\n"
 "X-Poedit-SearchPath-0: plugin.py\n"
 
-#: plugin.py:287
-msgid "Exit"
-msgstr "Verlassen"
-
-#: plugin.py:363
-msgid "Try again later ..."
-msgstr "Versuche es später noch einmal ..."
-
-#: plugin.py:428
-msgid "Session error, try again later ..."
-msgstr "Sitzungsfehler, versuchen Sie es später noch einmal ..."
-
-#: plugin.py:496
-msgid "Error loading channels"
-msgstr "Fehler beim Laden von Kanälen"
-
-#: plugin.py:564 plugin.py:717
-msgid "Select stream quality"
-msgstr "Streamqualität auswählen"
-
-#: plugin.py:604
-msgid "Could not get stream token"
-msgstr "Stream-Token konnte nicht abgerufen werden"
+# New strings - GitHub Action
+msgid "Buffering..."
+msgstr ""
 
 #: plugin.py:723
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: plugin.py:724
-msgid "OK"
-msgstr "OK"
+msgid "Cannot regenerate stream URL"
+msgstr ""
+
+#, fuzzy
+#| msgid "Could not get stream token"
+msgid "Cannot restore stream connection"
+msgstr "Stream-Token konnte nicht abgerufen werden"
+
+#: plugin.py:604
+msgid "Could not get stream token"
+msgstr "Stream-Token konnte nicht abgerufen werden"
+
+msgid "Enable Token Update refresh on Player."
+msgstr ""
+
+msgid "Enable token auto-refresh"
+msgstr ""
+
+#: plugin.py:496
+msgid "Error loading channels"
+msgstr "Fehler beim Laden von Kanälen"
 
 #: plugin.py:989
 msgid "Error playing stream"
 msgstr "Fehler beim Abspielen des Streams"
 
+#: plugin.py:287
+msgid "Exit"
+msgstr "Verlassen"
+
+msgid "Filmon Settings"
+msgstr ""
+
+msgid "Maximum reconnection attempts reached"
+msgstr ""
+
+#: plugin.py:724
+msgid "OK"
+msgstr "OK"
+
 #: plugin.py:1196
 msgid "Play/pause not supported for this stream"
 msgstr "Wiedergabe/Pause wird für diesen Stream nicht unterstützt"
 
+#: plugin.py:564 plugin.py:717
+msgid "Select stream quality"
+msgstr "Streamqualität auswählen"
+
+#: plugin.py:428
+msgid "Session error, try again later ..."
+msgstr "Sitzungsfehler, versuchen Sie es später noch einmal ..."
+
+msgid "Set Timer Refresh update Player."
+msgstr ""
+
+msgid "Token refresh interval (seconds)"
+msgstr ""
+
+#: plugin.py:363
+msgid "Try again later ..."
+msgstr "Versuche es später noch einmal ..."
+
 #: plugin.py:1246 plugin.py:1319
 msgid "WELCOME TO FILMON PLUGIN BY LULULLA"
 msgstr "WILLKOMMEN BEI FILMON PLUGIN BY LULULLA"
+
+#~ msgid "Congrats! You already have the latest version..."
+#~ msgstr "Herzlichen Glückwunsch! Sie haben bereits die neueste Version..."
+
+#, python-format
+#~ msgid "Do you want to install update ( %s ) now?"
+#~ msgstr "Möchten Sie das Update ( %s ) jetzt installieren?"
+
+#~ msgid "For Stream Youtube coming soon!"
+#~ msgstr "Für Stream Youtube bald verfügbar!"
 
 #, python-format
 #~ msgid ""
@@ -88,15 +128,5 @@ msgstr "WILLKOMMEN BEI FILMON PLUGIN BY LULULLA"
 #~ "\n"
 #~ "Möchten Sie sie jetzt installieren?"
 
-#~ msgid "Congrats! You already have the latest version..."
-#~ msgstr "Herzlichen Glückwunsch! Sie haben bereits die neueste Version..."
-
-#, python-format
-#~ msgid "Do you want to install update ( %s ) now?"
-#~ msgstr "Möchten Sie das Update ( %s ) jetzt installieren?"
-
 #~ msgid "Update Aborted!"
 #~ msgstr "Update Abgebrochen!"
-
-#~ msgid "For Stream Youtube coming soon!"
-#~ msgstr "Für Stream Youtube bald verfügbar!"
