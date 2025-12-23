@@ -12,17 +12,19 @@ import subprocess
 from pathlib import Path
 
 # ===== CONFIGURATION - CHANGE ONLY THESE 2 VALUES =====
-PLUGIN_NAME = "Filmon"  # CHANGE THIS: Name of your plugin
+PLUGIN_NAME = os.environ.get('PLUGIN_NAME', 'Filmon')
 PLUGIN_ROOT = Path("usr/lib/enigma2/python/Plugins/Extensions")
 # CHANGE THIS: Path to your plugin directory (without plugin name)
 # ===== END CONFIGURATION =====
+if '/' in PLUGIN_NAME:
+    PLUGIN_NAME = Path(PLUGIN_NAME).name
 
 # Full path to the specific plugin
 PLUGIN_DIR = PLUGIN_ROOT / PLUGIN_NAME
 
 print("=" * 70)
-print(f"PLUGIN: {PLUGIN_NAME}")
-print(f"Plugin directory: {PLUGIN_DIR}")
+print(f"PLUGIN NAME FROM ENV: {os.environ.get('PLUGIN_NAME', 'NOT SET')}")
+print(f"USING PLUGIN NAME: {PLUGIN_NAME}")
 print("=" * 70)
 
 # ===== 1. FIND LOCALE DIRECTORY =====

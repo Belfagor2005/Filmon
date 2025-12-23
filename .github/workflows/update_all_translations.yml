@@ -12,12 +12,17 @@ jobs:
   update-translations:
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: write
+      pull-requests: write
+
     steps:
       # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       # 2. Setup Python
       - name: Set up Python
@@ -104,4 +109,4 @@ jobs:
             **Note:** Existing translations were preserved. New strings appear as `msgstr ""` (to be translated).
           branch: "update-${{ inputs.plugin_name }}-translations"
           delete-branch: true
-          labels: "translations"
+          token: ${{ secrets.GITHUB_TOKEN }}
