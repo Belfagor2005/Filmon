@@ -1,59 +1,58 @@
 #, fuzzy
-msgid ""
-msgstr ""
-"Project-Id-Version: Filmon\n"
-"POT-Creation-Date: 2025-08-24 21:26+0200\n"
-"PO-Revision-Date: \n"
-"Last-Translator: \n"
-"Language-Team: \n"
-"Language: it\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=iso-8859-1\n"
-"Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.6\n"
-"X-Poedit-Basepath: ..\n"
-"X-Poedit-SearchPath-0: .\n"
 
-#: plugin.py:287
-msgid "Exit"
+msgid "Buffering..."
 msgstr ""
 
-#: plugin.py:363
-msgid "Try again later ..."
-msgstr ""
-
-#: plugin.py:428
-msgid "Session error, try again later ..."
-msgstr ""
-
-#: plugin.py:496
-msgid "Error loading channels"
-msgstr ""
-
-#: plugin.py:564 plugin.py:717
-msgid "Select stream quality"
-msgstr ""
-
-#: plugin.py:604
-msgid "Could not get stream token"
-msgstr ""
-
-#: plugin.py:723
 msgid "Cancel"
 msgstr ""
 
-#: plugin.py:724
+msgid "Cannot regenerate stream URL"
+msgstr ""
+
+msgid "Cannot restore stream connection"
+msgstr ""
+
+msgid "Could not get stream token"
+msgstr ""
+
+msgid "Enable Token Update refresh on Player."
+msgstr ""
+
+msgid "Enable token auto-refresh"
+msgstr ""
+
+msgid "Error loading channels"
+msgstr ""
+
+msgid "Exit"
+msgstr ""
+
+msgid "Filmon Settings"
+msgstr ""
+
+msgid "Maximum reconnection attempts reached"
+msgstr ""
+
 msgid "OK"
 msgstr ""
 
-#: plugin.py:989
-msgid "Error playing stream"
-msgstr ""
-
-#: plugin.py:1196
 msgid "Play/pause not supported for this stream"
 msgstr ""
 
-#: plugin.py:1246 plugin.py:1319
+msgid "Select stream quality"
+msgstr ""
+
+msgid "Session error, try again later ..."
+msgstr ""
+
+msgid "Set Timer Refresh update Player."
+msgstr ""
+
+msgid "Token refresh interval (seconds)"
+msgstr ""
+
+msgid "Try again later ..."
+msgstr ""
+
 msgid "WELCOME TO FILMON PLUGIN BY LULULLA"
 msgstr ""

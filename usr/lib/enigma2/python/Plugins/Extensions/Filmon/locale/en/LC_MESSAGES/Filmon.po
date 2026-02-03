@@ -1,0 +1,69 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: enigma 2\n"
+"PO-Revision-Date: 2026-02-03 14:19+0000\n"
+"Last-Translator:  <EMAIL@ADDRESS>\n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ASCII\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#, fuzzy
+msgid "Buffering..."
+msgstr "Buffering..."
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Cannot regenerate stream URL"
+msgstr "Cannot regenerate stream URL"
+
+msgid "Cannot restore stream connection"
+msgstr "Cannot restore stream connection"
+
+msgid "Could not get stream token"
+msgstr "Could not get stream token"
+
+msgid "Enable Token Update refresh on Player."
+msgstr "Enable Token Update refresh on Player."
+
+msgid "Enable token auto-refresh"
+msgstr "Enable token auto-refresh"
+
+msgid "Error loading channels"
+msgstr "Error loading channels"
+
+msgid "Exit"
+msgstr "Exit"
+
+msgid "Filmon Settings"
+msgstr "Filmon Settings"
+
+msgid "Maximum reconnection attempts reached"
+msgstr "Maximum reconnection attempts reached"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Play/pause not supported for this stream"
+msgstr "Play/pause not supported for this stream"
+
+msgid "Select stream quality"
+msgstr "Select stream quality"
+
+msgid "Session error, try again later ..."
+msgstr "Session error, try again later ..."
+
+msgid "Set Timer Refresh update Player."
+msgstr "Set Timer Refresh update Player."
+
+msgid "Token refresh interval (seconds)"
+msgstr "Token refresh interval (seconds)"
+
+msgid "Try again later ..."
+msgstr "Try again later ..."
+
+msgid "WELCOME TO FILMON PLUGIN BY LULULLA"
+msgstr "WELCOME TO FILMON PLUGIN BY LULULLA"

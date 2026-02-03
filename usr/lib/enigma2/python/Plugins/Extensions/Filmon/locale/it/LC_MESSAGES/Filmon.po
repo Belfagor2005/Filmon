@@ -13,46 +13,63 @@ msgstr ""
 "X-Poedit-Basepath: ../../..\n"
 "X-Poedit-SearchPath-0: plugin.py\n"
 
-#: plugin.py:287
-msgid "Exit"
-msgstr "Esci"
+msgid "Buffering..."
+msgstr ""
 
-#: plugin.py:363
-msgid "Try again later ..."
-msgstr "Prova più tardi ..."
-
-#: plugin.py:428
-msgid "Session error, try again later ..."
-msgstr "Errore di sessione, riprova più tardi..."
-
-#: plugin.py:496
-msgid "Error loading channels"
-msgstr "Errore durante il caricamento dei canali"
-
-#: plugin.py:564 plugin.py:717
-msgid "Select stream quality"
-msgstr "Seleziona la qualità dello streaming"
-
-#: plugin.py:604
-msgid "Could not get stream token"
-msgstr "Impossibile ottenere il token di streaming"
-
-#: plugin.py:723
 msgid "Cancel"
 msgstr "Annulla"
 
-#: plugin.py:724
+msgid "Cannot regenerate stream URL"
+msgstr ""
+
+#, fuzzy
+msgid "Cannot restore stream connection"
+msgstr "Impossibile ottenere il token di streaming"
+
+msgid "Could not get stream token"
+msgstr "Impossibile ottenere il token di streaming"
+
+msgid "Enable Token Update refresh on Player."
+msgstr ""
+
+msgid "Enable token auto-refresh"
+msgstr ""
+
+msgid "Error loading channels"
+msgstr "Errore durante il caricamento dei canali"
+
+msgid "Exit"
+msgstr "Esci"
+
+msgid "Filmon Settings"
+msgstr ""
+
+msgid "Maximum reconnection attempts reached"
+msgstr ""
+
 msgid "OK"
 msgstr ""
 
-#: plugin.py:989
-msgid "Error playing stream"
-msgstr "Errore durante la riproduzione dello streaming"
-
-#: plugin.py:1196
 msgid "Play/pause not supported for this stream"
 msgstr "Riproduzione/pausa non supportata per questo flusso"
 
-#: plugin.py:1246 plugin.py:1319
+msgid "Select stream quality"
+msgstr "Seleziona la qualità dello streaming"
+
+msgid "Session error, try again later ..."
+msgstr "Errore di sessione, riprova più tardi..."
+
+msgid "Set Timer Refresh update Player."
+msgstr ""
+
+msgid "Token refresh interval (seconds)"
+msgstr ""
+
+msgid "Try again later ..."
+msgstr "Prova più tardi ..."
+
 msgid "WELCOME TO FILMON PLUGIN BY LULULLA"
 msgstr "BENVENUTI AL PLUGIN FILMON DI LULULLA"
+
+#~ msgid "Error playing stream"
+#~ msgstr "Errore durante la riproduzione dello streaming"

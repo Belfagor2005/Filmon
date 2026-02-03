@@ -1,0 +1,67 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: enigma 2\n"
+"PO-Revision-Date: 2026-02-03 14:19+0000\n"
+"Last-Translator:  <EMAIL@ADDRESS>\n"
+"Language-Team: Tajik <rkovacs@khujand.org>\n"
+"Language: tg\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ASCII\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Buffering..."
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Cannot regenerate stream URL"
+msgstr ""
+
+msgid "Cannot restore stream connection"
+msgstr ""
+
+msgid "Could not get stream token"
+msgstr ""
+
+msgid "Enable Token Update refresh on Player."
+msgstr ""
+
+msgid "Enable token auto-refresh"
+msgstr ""
+
+msgid "Error loading channels"
+msgstr ""
+
+msgid "Exit"
+msgstr ""
+
+msgid "Filmon Settings"
+msgstr ""
+
+msgid "Maximum reconnection attempts reached"
+msgstr ""
+
+msgid "OK"
+msgstr ""
+
+msgid "Play/pause not supported for this stream"
+msgstr ""
+
+msgid "Select stream quality"
+msgstr ""
+
+msgid "Session error, try again later ..."
+msgstr ""
+
+msgid "Set Timer Refresh update Player."
+msgstr ""
+
+msgid "Token refresh interval (seconds)"
+msgstr ""
+
+msgid "Try again later ..."
+msgstr ""
+
+msgid "WELCOME TO FILMON PLUGIN BY LULULLA"
+msgstr ""
